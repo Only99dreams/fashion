@@ -14,7 +14,6 @@ export default function Hero() {
           <h1 className="hero__heading">GET YOUR BAG</h1>
           <div className="hero__buttons">
             <a href="/new-arrivals" className="btn btn--dark">Shop Now</a>
-            <a href="/sell" className="btn btn--outline-dark">Sell Now</a>
           </div>
         </div>
       </div>

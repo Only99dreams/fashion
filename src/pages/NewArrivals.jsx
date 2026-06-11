@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import ProductCard from '../components/ProductCard'
-import products from '../data/products'
+import { getProducts } from '../data/getProducts'
 
 const PAGE_SIZE = 12
 
@@ -28,9 +28,18 @@ function matchesPriceRange(price, range) {
 }
 
 export default function NewArrivals() {
+  const [allProducts, setAllProducts] = useState([])
+  const [loading, setLoading] = useState(true)
   const [selectedFilters, setSelectedFilters] = useState({})
   const [sort, setSort] = useState('Featured')
   const [page, setPage] = useState(1)
+
+  useEffect(() => {
+    getProducts().then((data) => {
+      setAllProducts(data)
+      setLoading(false)
+    })
+  }, [])
 
   function toggleFilter(groupKey, value) {
     setSelectedFilters((prev) => {
@@ -43,7 +52,7 @@ export default function NewArrivals() {
   }
 
   const filtered = useMemo(() => {
-    let result = [...products]
+    let result = [...allProducts]
 
     Object.entries(selectedFilters).forEach(([key, values]) => {
       if (!values || values.length === 0) return
@@ -124,7 +133,11 @@ export default function NewArrivals() {
             </div>
           </div>
 
-          {paginated.length === 0 ? (
+          {loading ? (
+            <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <p style={{ fontSize: '18px', color: '#7d7d7d' }}>Loading...</p>
+            </div>
+          ) : paginated.length === 0 ? (
             <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>
               <p style={{ fontSize: '18px', color: '#7d7d7d' }}>No products match your filters. Try adjusting your selection.</p>
             </div>

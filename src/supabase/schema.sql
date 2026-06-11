@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS public.orders (
   customer_email TEXT NOT NULL,
   shipping_address TEXT,
   status TEXT DEFAULT 'pending',
+  payment_method TEXT DEFAULT '',
+  payment_status TEXT DEFAULT 'pending',
+  payment_ref TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -35,6 +38,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   role TEXT DEFAULT 'admin',
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT '';
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pending';
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_ref TEXT DEFAULT '';
 
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;

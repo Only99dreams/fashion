@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import ProductCard from '../components/ProductCard'
 import { useCart } from '../context/CartContext'
+import { useToast } from '../context/ToastContext'
 import { getProducts } from '../data/getProducts'
 
 const fallbackImages = {
@@ -33,6 +34,7 @@ const fallbackImages = {
 
 export default function ProductDetail({ productId }) {
   const { addToCart } = useCart()
+  const { showToast } = useToast()
   const [allProducts, setAllProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
@@ -157,7 +159,7 @@ export default function ProductDetail({ productId }) {
 
           <button
             className="btn btn--dark pd-info__add-btn"
-            onClick={() => addToCart(product)}
+            onClick={() => { addToCart(product); showToast(`${product.brand} ${product.name} added to cart`) }}
           >
             Add to Cart — ${product.price.toLocaleString()}
           </button>

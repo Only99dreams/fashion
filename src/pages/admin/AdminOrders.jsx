@@ -5,6 +5,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [expanded, setExpanded] = useState(null)
 
   useEffect(() => { loadOrders() }, [])
 
@@ -30,6 +31,22 @@ export default function AdminOrders() {
     }
   }
 
+  function getPaymentLabel(method) {
+    const labels = {
+      flutterwave: 'Flutterwave',
+      stripe: 'Stripe',
+      bank_transfer: 'Bank Transfer',
+    }
+    return labels[method] || method || '—'
+  }
+
+  function getPaymentStatusBadge(status) {
+    const cls = status === 'completed' ? 'admin-badge--delivered' :
+                status === 'pending' ? 'admin-badge--pending' :
+                status === 'failed' ? 'admin-badge--cancelled' : ''
+    return <span className={`admin-badge ${cls}`}>{status || '—'}</span>
+  }
+
   if (loading) return <p className="admin-empty">Loading...</p>
 
   return (
@@ -49,9 +66,10 @@ export default function AdminOrders() {
               <th>Email</th>
               <th>Items</th>
               <th>Total</th>
-              <th>Status</th>
+              <th>Payment</th>
+              <th>Payment Status</th>
+              <th>Order Status</th>
               <th>Date</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -62,8 +80,8 @@ export default function AdminOrders() {
                 <td>{o.customer_email}</td>
                 <td>{Array.isArray(o.items) ? o.items.length : 0}</td>
                 <td>${Number(o.total).toLocaleString()}</td>
-                <td><span className={`admin-badge admin-badge--${o.status}`}>{o.status}</span></td>
-                <td>{new Date(o.created_at).toLocaleDateString()}</td>
+                <td>{getPaymentLabel(o.payment_method)}</td>
+                <td>{getPaymentStatusBadge(o.payment_status)}</td>
                 <td>
                   <select
                     value={o.status}
@@ -77,6 +95,7 @@ export default function AdminOrders() {
                     <option value="cancelled">Cancelled</option>
                   </select>
                 </td>
+                <td>{new Date(o.created_at).toLocaleDateString()}</td>
               </tr>
             ))}
           </tbody>

@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react'
 import ProductCard from '../components/ProductCard'
 import { getProducts } from '../data/getProducts'
 
+const PAGE_SIZE = 12
+
 const cardiBrands = [
   { name: 'Hermes', img: 'https://images.unsplash.com/photo-1598532163257-ae3c6b2524b6?w=400&q=80' },
   { name: 'Chanel', img: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&q=80' },
@@ -11,25 +13,87 @@ const cardiBrands = [
   { name: 'Cartier', img: 'https://images.unsplash.com/photo-1604176354204-9268737828e4?w=400&q=80' },
 ]
 
-const filters = [
-  { name: 'Designer', options: ['Chanel', 'Hermes', 'Louis Vuitton', 'Gucci', 'Bottega Veneta', 'Cartier', 'Christian Dior', 'Fendi'] },
-  { name: 'Category', options: ['Bags', 'Jewelry', 'Watches', 'Shoes', 'Accessories'] },
-  { name: 'Condition', options: ['Excellent', 'Very Good', 'Good', 'Shows Wear'] },
-  { name: 'Price Range', options: ['Under $500', '$500 - $1,000', '$1,000 - $2,500', '$2,500 - $5,000', '$5,000 - $10,000', '$10,000+'] },
-  { name: 'Color', options: ['Black', 'Brown', 'Beige', 'Red', 'Blue', 'Green', 'Pink', 'Purple', 'White', 'Gold'] },
+const filterConfig = [
+  { name: 'Designer', key: 'brand', options: ['Chanel', 'Hermes', 'Louis Vuitton', 'Gucci', 'Bottega Veneta', 'Cartier', 'Christian Dior', 'Fendi'] },
+  { name: 'Category', key: 'category', options: ['Bags', 'Jewelry', 'Watches', 'Shoes', 'Accessories'] },
+  { name: 'Condition', key: 'condition', options: ['Excellent', 'Very Good', 'Good', 'Shows Wear'] },
+  { name: 'Price Range', key: 'priceRange', options: ['Under $500', '$500 - $1,000', '$1,000 - $2,500', '$2,500 - $5,000', '$5,000 - $10,000', '$10,000+'] },
+  { name: 'Color', key: 'color', options: ['Black', 'Brown', 'Beige', 'Red', 'Blue', 'Green', 'Pink', 'Purple', 'White', 'Gold'] },
 ]
 
+function parsePriceRange(label) {
+  if (label === 'Under $500') return [0, 500]
+  if (label === '$500 - $1,000') return [500, 1000]
+  if (label === '$1,000 - $2,500') return [1000, 2500]
+  if (label === '$2,500 - $5,000') return [2500, 5000]
+  if (label === '$5,000 - $10,000') return [5000, 10000]
+  if (label === '$10,000+') return [10000, Infinity]
+  return null
+}
+
 export default function CardiBPicks() {
-  const [products, setProducts] = useState([])
+  const [allProducts, setAllProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedFilters, setSelectedFilters] = useState({})
+  const [sort, setSort] = useState('Featured')
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
-    getProducts().then(setProducts)
+    getProducts().then((data) => {
+      setAllProducts(data)
+      setLoading(false)
+    })
   }, [])
 
   const cardiProducts = useMemo(
-    () => products.filter((p) => p.is_cardi_pick),
-    [products]
+    () => allProducts.filter((p) => p.is_cardi_pick),
+    [allProducts]
   )
+
+  function toggleFilter(groupKey, value) {
+    setSelectedFilters((prev) => {
+      const current = prev[groupKey] || []
+      const exists = current.includes(value)
+      const updated = exists ? current.filter((v) => v !== value) : [...current, value]
+      setPage(1)
+      return { ...prev, [groupKey]: updated.length ? updated : undefined }
+    })
+  }
+
+  const filtered = useMemo(() => {
+    let result = [...cardiProducts]
+
+    Object.entries(selectedFilters).forEach(([key, values]) => {
+      if (!values || values.length === 0) return
+      if (key === 'priceRange') {
+        result = result.filter((p) =>
+          values.some((v) => {
+            const range = parsePriceRange(v)
+            return range && p.price >= range[0] && p.price < range[1]
+          })
+        )
+      } else {
+        result = result.filter((p) => values.includes(p[key]))
+      }
+    })
+
+    switch (sort) {
+      case 'Price: Low to High':
+        result.sort((a, b) => a.price - b.price); break
+      case 'Price: High to Low':
+        result.sort((a, b) => b.price - a.price); break
+      case 'Newest':
+        result.sort((a, b) => b.id - a.id); break
+      default:
+        break
+    }
+
+    return result
+  }, [selectedFilters, sort, cardiProducts])
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const currentPage = Math.min(page, totalPages || 1)
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   return (
     <main className="new-arrivals">
@@ -70,48 +134,87 @@ export default function CardiBPicks() {
       <div className="na-layout">
         <aside className="na-sidebar">
           <h3 className="na-sidebar__title">Filters</h3>
-          {filters.map((group) => (
-            <div key={group.name} className="na-filter-group">
+          {filterConfig.map((group) => (
+            <div key={group.key} className="na-filter-group">
               <h4 className="na-filter-group__name">{group.name}</h4>
-              {group.options.map((opt) => (
-                <label key={opt} className="na-filter-option">
-                  <input type="checkbox" />
-                  <span>{opt}</span>
-                </label>
-              ))}
+              {group.options.map((opt) => {
+                const checked = (selectedFilters[group.key] || []).includes(opt)
+                return (
+                  <label key={opt} className="na-filter-option">
+                    <input type="checkbox" checked={checked} onChange={() => toggleFilter(group.key, opt)} />
+                    <span>{opt}</span>
+                  </label>
+                )
+              })}
             </div>
           ))}
-          <button className="btn btn--dark" style={{ width: '100%', marginTop: '16px' }}>Apply Filters</button>
+          {Object.values(selectedFilters).some((v) => v && v.length) && (
+            <button className="btn btn--outline-dark" style={{ width: '100%', marginTop: '16px' }} onClick={() => { setSelectedFilters({}); setPage(1) }}>
+              Clear Filters
+            </button>
+          )}
         </aside>
 
         <div className="na-main">
           <div className="na-toolbar">
-            <p className="na-toolbar__count">{cardiProducts.length} Products</p>
+            <p className="na-toolbar__count">{filtered.length} Product{filtered.length !== 1 ? 's' : ''}</p>
             <div className="na-toolbar__sort">
               <label htmlFor="sort">Sort by:</label>
-              <select id="sort" className="na-toolbar__select">
+              <select id="sort" className="na-toolbar__select" value={sort} onChange={(e) => { setSort(e.target.value); setPage(1) }}>
                 <option>Featured</option>
                 <option>Newest</option>
                 <option>Price: Low to High</option>
                 <option>Price: High to Low</option>
-                <option>Best Selling</option>
               </select>
             </div>
           </div>
 
-          <div className="na-grid">
-            {cardiProducts.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <p style={{ fontSize: '18px', color: '#7d7d7d' }}>Loading...</p>
+            </div>
+          ) : paginated.length === 0 ? (
+            <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <p style={{ fontSize: '18px', color: '#7d7d7d' }}>No products match your filters. Try adjusting your selection.</p>
+            </div>
+          ) : (
+            <div className="na-grid">
+              {paginated.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
 
-          <div className="na-pagination">
-            <span className="na-pagination__active">1</span>
-            <a href="#" className="na-pagination__next">
-              Next
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
-          </div>
+          {totalPages > 1 && (
+            <div className="na-pagination">
+              <a
+                href="#"
+                className={`na-pagination__prev${currentPage <= 1 ? ' na-pagination--disabled' : ''}`}
+                onClick={(e) => { e.preventDefault(); if (currentPage > 1) setPage(currentPage - 1) }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Prev
+              </a>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                const start = Math.max(1, currentPage - 2)
+                const pNum = start + i
+                if (pNum > totalPages) return null
+                return pNum === currentPage ? (
+                  <span key={pNum} className="na-pagination__active">{pNum}</span>
+                ) : (
+                  <a key={pNum} href="#" onClick={(e) => { e.preventDefault(); setPage(pNum) }}>{pNum}</a>
+                )
+              })}
+              <a
+                href="#"
+                className={`na-pagination__next${currentPage >= totalPages ? ' na-pagination--disabled' : ''}`}
+                onClick={(e) => { e.preventDefault(); if (currentPage < totalPages) setPage(currentPage + 1) }}
+              >
+                Next
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </a>
+            </div>
+          )}
         </div>
       </div>
 

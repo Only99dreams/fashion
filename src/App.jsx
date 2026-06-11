@@ -22,6 +22,7 @@ import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import GenericPage from './pages/GenericPage'
 import { AdminProvider } from './context/AdminContext'
+import { ToastProvider } from './context/ToastContext'
 import AdminLayout from './pages/admin/AdminLayout'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -157,6 +158,7 @@ export default function App() {
   return (
     <AdminProvider>
       <CartProvider>
+        <ToastProvider>
         {!isAdmin && <AnnouncementBar />}
         {!isAdmin && <Header />}
         <Router
@@ -181,6 +183,7 @@ export default function App() {
         />
         {!isAdmin && <Footer />}
         {!isAdmin && <CookieBanner />}
+        </ToastProvider>
       </CartProvider>
     </AdminProvider>
   )

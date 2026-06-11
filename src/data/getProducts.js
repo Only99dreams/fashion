@@ -1,16 +1,11 @@
 import { supabase } from '../supabase/client'
 import staticProducts from './products'
 
-let cached = null
-
 export async function getProducts() {
-  if (cached) return cached
-
   try {
     const { data, error } = await supabase.from('products').select('*').order('id', { ascending: true })
     if (!error && data && data.length > 0) {
-      cached = data.map(normalizeProduct)
-      return cached
+      return data.map(normalizeProduct)
     }
   } catch {}
 

@@ -2619,6 +2619,251 @@ button { cursor: pointer; font-family: inherit; }
   .checkout-form__row { grid-template-columns: 1fr; }
 }
 
+/* ===== PAYMENT METHODS ===== */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.payment-method {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-grey-3);
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+
+.payment-method:hover { border-color: var(--color-grey-5); }
+
+.payment-method--active {
+  border-color: var(--color-black);
+  background: #fafafa;
+}
+
+.payment-method input { position: absolute; opacity: 0; pointer-events: none; }
+
+.payment-method__icon { font-size: 20px; flex-shrink: 0; }
+
+.payment-method__info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.payment-method__label {
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-black);
+}
+
+.payment-method__desc {
+  font-size: 12px;
+  color: var(--color-grey-6);
+  margin-top: 1px;
+}
+
+.payment-method__check {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--color-grey-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.payment-method--active .payment-method__check {
+  background: var(--color-black);
+  border-color: var(--color-black);
+}
+
+.payment-method--active .payment-method__check svg {
+  stroke: var(--color-white);
+}
+
+.payment-stripe-wrapper {
+  margin-bottom: 16px;
+}
+
+.payment-stripe-card {
+  padding: 14px;
+  border: 1px solid var(--color-grey-3);
+  background: var(--color-white);
+  min-height: 44px;
+}
+
+.payment-stripe-card iframe { width: 100% !important; }
+
+.payment-demo-notice {
+  font-size: 13px;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 12px 16px;
+  line-height: 1.5;
+}
+
+.payment-demo-notice code {
+  font-size: 12px;
+  background: rgba(0,0,0,0.06);
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.payment-method-info {
+  font-size: 13px;
+  color: var(--color-grey-6);
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--color-grey-1);
+  line-height: 1.5;
+}
+
+.payment-manual-info {
+  font-size: 13px;
+  color: var(--color-grey-6);
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: var(--color-grey-1);
+  line-height: 1.5;
+}
+
+.btn-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Bank Transfer Details (success page) */
+.checkout-bank-details {
+  display: inline-block;
+  text-align: left;
+  background: var(--color-grey-1);
+  padding: 20px 28px;
+  margin: 16px auto;
+  border: 1px solid var(--color-grey-2);
+}
+
+.checkout-bank-details h3 {
+  font-size: 15px;
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-grey-3);
+}
+
+.checkout-bank-details__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 32px;
+  font-size: 14px;
+  padding: 6px 0;
+}
+
+.checkout-bank-details__row span:first-child {
+  color: var(--color-grey-6);
+  font-weight: var(--font-weight-medium);
+}
+
+.checkout-bank-details__row span:last-child {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-black);
+}
+
+/* Payment icons in sidebar */
+.checkout-sidebar__payment-icons {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-grey-2);
+}
+
+.checkout-sidebar__payment-icons > span {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-grey-6);
+  margin-bottom: 8px;
+}
+
+.checkout-sidebar__icons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.checkout-sidebar__icons svg {
+  border: 1px solid var(--color-grey-2);
+  border-radius: 2px;
+}
+
+/* ===== TOAST ===== */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: #205107;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 0;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  cursor: pointer;
+  pointer-events: auto;
+  animation: toast-in 0.3s ease-out;
+  max-width: 400px;
+  line-height: 1.4;
+}
+
+.toast--error {
+  background: #991b1b;
+}
+
+.toast__icon {
+  flex-shrink: 0;
+}
+
+.toast__message {
+  flex: 1;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(80px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 576px) {
+  .toast-container {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+  .toast { max-width: 100%; }
+}
+
 /* ===== ADMIN LAYOUT ===== */
 .admin-layout {
   display: flex;

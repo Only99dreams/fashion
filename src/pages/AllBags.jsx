@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import ProductCard from '../components/ProductCard'
-import products from '../data/products'
+import { getProducts } from '../data/getProducts'
 
 const PAGE_SIZE = 12
 
@@ -43,13 +43,38 @@ function parsePriceRange(label) {
 }
 
 export default function AllBags() {
+  const [allProducts, setAllProducts] = useState([])
+  const [loading, setLoading] = useState(true)
   const [selectedFilters, setSelectedFilters] = useState({})
   const [sort, setSort] = useState('Featured')
   const [page, setPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  useEffect(() => {
+    function readSearchParam() {
+      const params = new URLSearchParams(window.location.search)
+      const q = params.get('q') || ''
+      setSearchQuery(q)
+    }
+    readSearchParam()
+    window.addEventListener('popstate', readSearchParam)
+    window.addEventListener('app:navigate', readSearchParam)
+    return () => {
+      window.removeEventListener('popstate', readSearchParam)
+      window.removeEventListener('app:navigate', readSearchParam)
+    }
+  }, [])
+
+  useEffect(() => {
+    getProducts().then((data) => {
+      setAllProducts(data)
+      setLoading(false)
+    })
+  }, [])
 
   const bagProducts = useMemo(
-    () => products.filter((p) => p.category === 'Bags'),
-    []
+    () => allProducts.filter((p) => p.category === 'Bags'),
+    [allProducts]
   )
 
   function toggleFilter(groupKey, value) {
@@ -64,6 +89,15 @@ export default function AllBags() {
 
   const filtered = useMemo(() => {
     let result = [...bagProducts]
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter((p) =>
+        p.name.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q)
+      )
+    }
 
     Object.entries(selectedFilters).forEach(([key, values]) => {
       if (!values || values.length === 0) return
@@ -91,7 +125,7 @@ export default function AllBags() {
     }
 
     return result
-  }, [selectedFilters, sort, bagProducts])
+  }, [selectedFilters, sort, bagProducts, searchQuery])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const currentPage = Math.min(page, totalPages || 1)
@@ -147,7 +181,11 @@ export default function AllBags() {
             </div>
           </div>
 
-          {paginated.length === 0 ? (
+          {loading ? (
+            <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <p style={{ fontSize: '18px', color: '#7d7d7d' }}>Loading...</p>
+            </div>
+          ) : paginated.length === 0 ? (
             <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>
               <p style={{ fontSize: '18px', color: '#7d7d7d' }}>No products match your filters. Try adjusting your selection.</p>
             </div>
