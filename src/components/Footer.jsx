@@ -52,6 +52,7 @@ export default function Footer() {
               <h6>Customer Service</h6>
               <a href="/help">Contact Us</a>
               <a href="/account">My Account</a>
+              <a href="/orders">My Orders</a>
               <a href="/help">Alerts</a>
               <a href="/help">Shipping</a>
               <a href="/help">Returns</a>

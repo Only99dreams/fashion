@@ -4,10 +4,12 @@ import { supabase } from '../supabase/client'
 
 const FLW_KEY = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY || ''
 const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY || ''
-const IS_DEMO = !FLW_KEY && !STRIPE_KEY
+const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID || ''
+const IS_DEMO = !FLW_KEY && !STRIPE_KEY && !PAYPAL_CLIENT_ID
 
 const PAYMENT_METHODS = [
   { value: 'stripe', label: 'Credit / Debit Card', desc: 'Pay with Visa, Mastercard, Amex, Apple Pay, or Google Pay via Stripe', icon: '💳' },
+  { value: 'paypal', label: 'PayPal', desc: 'Pay with your PayPal account — fast, easy, and secure', icon: '🅿️' },
   { value: 'flutterwave', label: 'Flutterwave', desc: 'Cards, Bank Transfer, USSD, Mobile Money — available in 30+ countries', icon: '🌍' },
   { value: 'manual', label: 'Bank Transfer', desc: 'Pay via wire transfer or direct deposit', icon: '🏦' },
 ]
@@ -27,8 +29,24 @@ export default function Checkout() {
   const [stripeReady, setStripeReady] = useState(false)
   const stripeCardRef = useRef(null)
   const stripeObjRef = useRef(null)
+  const [paypalReady, setPaypalReady] = useState(false)
+  const formRef = useRef(form)
+
+  useEffect(() => { formRef.current = form }, [form])
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
+
+  async function createCustomerAccount(orderId) {
+    const name = `${formRef.current.firstName} ${formRef.current.lastName}`
+    const email = formRef.current.email
+    const { data: existing } = await supabase.from('customers').select('*').eq('email', email).single()
+    if (existing) {
+      const orderIds = [...(existing.order_ids || []), orderId]
+      await supabase.from('customers').update({ order_ids: orderIds, full_name: name, updated_at: new Date().toISOString() }).eq('email', email)
+    } else {
+      await supabase.from('customers').insert([{ email, full_name: name, order_ids: [orderId] }])
+    }
+  }
 
   async function saveOrder(method, payStatus, ref) {
     const { data, error: err } = await supabase.from('orders').insert([{
@@ -73,12 +91,51 @@ export default function Checkout() {
   }, [paymentMethod, stripeReady])
 
   useEffect(() => {
+    if (paymentMethod === 'paypal' && PAYPAL_CLIENT_ID && !paypalReady) {
+      const s = document.createElement('script')
+      s.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD`
+      s.onload = () => {
+        window.paypal.Buttons({
+          createOrder(data, actions) {
+            return actions.order.create({
+              purchase_units: [{
+                amount: { value: totalPrice.toString() },
+                description: `FASHIONPHILE order — ${formRef.current.firstName} ${formRef.current.lastName}`,
+              }],
+            })
+          },
+          async onApprove(data, actions) {
+            const details = await actions.order.capture()
+            const id = await saveOrder('paypal', 'completed', details.id)
+            await createCustomerAccount(id)
+            setOrderNum(id)
+            clearCart()
+            setSubmitted(true)
+          },
+          onCancel() {
+            setError('PayPal payment was cancelled.')
+            setSaving(false)
+          },
+          onError(err) {
+            setError(err.message || 'PayPal payment failed.')
+            setSaving(false)
+          },
+        }).render('#paypal-button-container')
+        setPaypalReady(true)
+      }
+      s.onerror = () => { setError('Failed to load PayPal SDK.') }
+      document.head.appendChild(s)
+    }
+  }, [paymentMethod, paypalReady, totalPrice, clearCart])
+
+  useEffect(() => {
     return () => {
       if (stripeObjRef.current?.card) {
         stripeObjRef.current.card.destroy()
         stripeObjRef.current = null
       }
       setStripeReady(false)
+      setPaypalReady(false)
     }
   }, [])
 
@@ -89,13 +146,24 @@ export default function Checkout() {
     setError('')
 
     try {
-      if (paymentMethod === 'flutterwave') {
+      if (paymentMethod === 'paypal') {
+        if (IS_DEMO) {
+          await new Promise((r) => setTimeout(r, 1000))
+          const ref = 'PAYPAL-DEMO-' + Date.now()
+          const id = await saveOrder('paypal', 'completed', ref)
+          await createCustomerAccount(id)
+          setOrderNum(id)
+          clearCart()
+          setSubmitted(true)
+        }
+      } else if (paymentMethod === 'flutterwave') {
         await payWithFlutterwave()
       } else if (paymentMethod === 'stripe') {
         await payWithStripe()
       } else if (paymentMethod === 'manual') {
         const ref = 'BANK-' + Date.now().toString(36).toUpperCase()
         const id = await saveOrder('bank_transfer', 'pending', ref)
+        await createCustomerAccount(id)
         setPaymentRef(ref)
         setOrderNum(id)
         clearCart()
@@ -124,6 +192,7 @@ export default function Checkout() {
           callback: async (resp) => {
             if (resp.status === 'successful' || resp.status === 'completed') {
               const id = await saveOrder('flutterwave', 'completed', resp.transaction_id || '')
+              await createCustomerAccount(id)
               setOrderNum(id)
               clearCart()
               setSubmitted(true)
@@ -154,6 +223,7 @@ export default function Checkout() {
       await new Promise((r) => setTimeout(r, 1000))
       const ref = 'STRIPE-DEMO-' + Date.now()
       const id = await saveOrder('stripe', 'completed', ref)
+      await createCustomerAccount(id)
       setOrderNum(id)
       clearCart()
       setSubmitted(true)
@@ -178,6 +248,7 @@ export default function Checkout() {
 
     if (payErr) throw payErr
     const id = await saveOrder('stripe', 'completed', paymentIntent?.id || '')
+    await createCustomerAccount(id)
     setOrderNum(id)
     clearCart()
     setSubmitted(true)
@@ -324,6 +395,18 @@ export default function Checkout() {
               </div>
             )}
 
+            {paymentMethod === 'paypal' && (
+              <div className="payment-paypal-wrapper">
+                {IS_DEMO ? (
+                  <p className="payment-demo-notice">
+                    PayPal is in demo mode. Click &quot;Place Order&quot; to simulate a successful payment. Add <code>VITE_PAYPAL_CLIENT_ID</code> to your <code>.env</code> for live payments.
+                  </p>
+                ) : (
+                  <div id="paypal-button-container" className="payment-paypal-buttons" />
+                )}
+              </div>
+            )}
+
             {paymentMethod === 'flutterwave' && (
               <p className="payment-method-info">
                 You will be redirected to Flutterwave to complete your payment using a card, bank transfer, USSD, or mobile money.
@@ -338,17 +421,19 @@ export default function Checkout() {
 
             {error && <p style={{ color: '#dc2626', fontSize: '14px', marginTop: '12px' }}>{error}</p>}
 
-            <button type="submit" className="btn btn--dark checkout-form__submit" disabled={saving}>
-              {saving ? (
-                <span className="btn-loading">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 0.6s linear infinite' }}>
-                    <circle cx="12" cy="12" r="10" opacity="0.25" />
-                    <path d="M12 2a10 10 0 0 1 10 10" />
-                  </svg>
-                  Processing Payment&hellip;
-                </span>
-              ) : `Place Order — $${totalPrice.toLocaleString()}`}
-            </button>
+            {!(paymentMethod === 'paypal' && PAYPAL_CLIENT_ID) && (
+              <button type="submit" className="btn btn--dark checkout-form__submit" disabled={saving}>
+                {saving ? (
+                  <span className="btn-loading">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 0.6s linear infinite' }}>
+                      <circle cx="12" cy="12" r="10" opacity="0.25" />
+                      <path d="M12 2a10 10 0 0 1 10 10" />
+                    </svg>
+                    Processing Payment&hellip;
+                  </span>
+                ) : `Place Order — $${totalPrice.toLocaleString()}`}
+              </button>
+            )}
           </form>
 
           <div className="checkout-sidebar">

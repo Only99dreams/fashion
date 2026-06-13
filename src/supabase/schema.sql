@@ -39,6 +39,15 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS public.customers (
+  id BIGSERIAL PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  full_name TEXT NOT NULL,
+  order_ids JSONB DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT '';
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pending';
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_ref TEXT DEFAULT '';
@@ -46,6 +55,14 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_ref TEXT DEFAULT '';
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admins can read products" ON public.products;
+DROP POLICY IF EXISTS "Admins can insert products" ON public.products;
+DROP POLICY IF EXISTS "Admins can update products" ON public.products;
+DROP POLICY IF EXISTS "Admins can delete products" ON public.products;
+DROP POLICY IF EXISTS "Admins can read orders" ON public.orders;
+DROP POLICY IF EXISTS "Admins can update orders" ON public.orders;
+DROP POLICY IF EXISTS "Users can insert orders" ON public.orders;
 
 CREATE POLICY "Admins can read products" ON public.products
   FOR SELECT USING (auth.role() = 'authenticated');

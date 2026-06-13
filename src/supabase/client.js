@@ -20,7 +20,7 @@ function saveStore(store) {
 
 function buildClient() {
   const saved = loadStore()
-  const store = saved || { products: [], orders: [], profiles: [] }
+  const store = saved || { products: [], orders: [], profiles: [], customers: [] }
 
   if (!saved) {
     store.products = staticProducts.map((p) => ({

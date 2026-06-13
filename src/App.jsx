@@ -20,6 +20,7 @@ import CardiBPicks from './pages/CardiBPicks'
 import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
+import OrderHistory from './pages/OrderHistory'
 import GenericPage from './pages/GenericPage'
 import { AdminProvider } from './context/AdminContext'
 import { ToastProvider } from './context/ToastContext'
@@ -139,6 +140,7 @@ export default function App() {
     'cardi-b-picks': <CardiBPicks />,
     'cart': <Cart />,
     'checkout': <Checkout />,
+    'orders': <OrderHistory />,
     'sale': <GenericPage title="Sale" desc="Score luxury at incredible prices. Over 50% off retail on pre-owned designer items." />,
     'sell': <GenericPage title="Sell With Us" desc="Turn your luxury items into cash. Sell online or in person." />,
     'about': <GenericPage title="About FASHIONPHILE" desc="The world's premier destination for authenticated pre-owned luxury." />,

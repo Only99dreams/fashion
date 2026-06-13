@@ -274,6 +274,9 @@ export default function Header() {
                   {link.label}
                 </a>
               ))}
+              <a href="/orders" className="header__mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                Order History
+              </a>
               <a href="/admin/login" className="header__mobile-nav-link header__mobile-nav-link--admin" onClick={() => setMobileOpen(false)}>
                 Admin
               </a>
