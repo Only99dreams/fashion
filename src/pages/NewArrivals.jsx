@@ -80,7 +80,7 @@ export default function NewArrivals() {
     }
 
     return result
-  }, [selectedFilters, sort])
+  }, [selectedFilters, sort, allProducts])
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const currentPage = Math.min(page, totalPages || 1)

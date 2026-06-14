@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../../supabase/client'
+import { supabase, normalizeImages } from '../../supabase/client'
 
 const brands = [
   'Hermes', 'Chanel', 'Louis Vuitton', 'Gucci', 'Bottega Veneta', 'Prada',
@@ -166,7 +166,7 @@ export default function AdminProductForm({ productId }) {
       setSaving(false)
       return
     }
-    const payload = {
+    const payload = normalizeImages({
       brand: form.brand,
       name: form.name,
       category: form.category,
@@ -177,7 +177,7 @@ export default function AdminProductForm({ productId }) {
       est_retail: form.est_retail ? parseFloat(form.est_retail) : null,
       images: form.images,
       is_cardi_pick: form.is_cardi_pick || false,
-    }
+    })
 
     let err
     if (isEdit) {

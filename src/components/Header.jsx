@@ -29,16 +29,8 @@ const designers = [
 export default function Header() {
   const [activeDropdown, setActiveDropdown] = useState(null)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [customLogo, setCustomLogo] = useState('')
   const hideTimer = useRef(null)
   const { totalItems } = useCart()
-
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem('fp_admin_branding') || '{}')
-      if (saved.logo) setCustomLogo(saved.logo)
-    } catch {}
-  }, [])
 
   const show = useCallback((name) => {
     if (hideTimer.current) clearTimeout(hideTimer.current)
@@ -274,6 +266,9 @@ export default function Header() {
                   {link.label}
                 </a>
               ))}
+              <a href="/account" className="header__mobile-nav-link" onClick={() => setMobileOpen(false)}>
+                My Account
+              </a>
               <a href="/orders" className="header__mobile-nav-link" onClick={() => setMobileOpen(false)}>
                 Order History
               </a>

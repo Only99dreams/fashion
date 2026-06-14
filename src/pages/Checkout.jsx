@@ -2,35 +2,26 @@ import { useState, useEffect, useRef } from 'react'
 import { useCart } from '../context/CartContext'
 import { supabase } from '../supabase/client'
 
-const FLW_KEY = import.meta.env.VITE_FLUTTERWAVE_PUBLIC_KEY || ''
-const STRIPE_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY || ''
-const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID || ''
-const IS_DEMO = !FLW_KEY && !STRIPE_KEY && !PAYPAL_CLIENT_ID
-
 const PAYMENT_METHODS = [
   { value: 'stripe', label: 'Credit / Debit Card', desc: 'Pay with Visa, Mastercard, Amex, Apple Pay, or Google Pay via Stripe', icon: '💳' },
   { value: 'paypal', label: 'PayPal', desc: 'Pay with your PayPal account — fast, easy, and secure', icon: '🅿️' },
-  { value: 'flutterwave', label: 'Flutterwave', desc: 'Cards, Bank Transfer, USSD, Mobile Money — available in 30+ countries', icon: '🌍' },
-  { value: 'manual', label: 'Bank Transfer', desc: 'Pay via wire transfer or direct deposit', icon: '🏦' },
+  { value: 'affirm', label: 'Affirm — Pay Over Time', desc: 'Buy now, pay later with easy monthly installments', icon: '⏱️' },
 ]
 
 export default function Checkout() {
-  const { items, totalPrice, totalItems, clearCart } = useCart()
+  const { items, totalPrice, totalItems } = useCart()
   const [submitted, setSubmitted] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [orderNum, setOrderNum] = useState(null)
   const [paymentMethod, setPaymentMethod] = useState('')
-  const [paymentRef, setPaymentRef] = useState('')
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '', phone: '',
     address: '', city: '', state: '', zip: '', country: 'US',
   })
-  const [stripeReady, setStripeReady] = useState(false)
-  const stripeCardRef = useRef(null)
-  const stripeObjRef = useRef(null)
-  const [paypalReady, setPaypalReady] = useState(false)
+  const [showContactModal, setShowContactModal] = useState(false)
   const formRef = useRef(form)
+  const processingRef = useRef(false)
 
   useEffect(() => { formRef.current = form }, [form])
 
@@ -49,209 +40,65 @@ export default function Checkout() {
   }
 
   async function saveOrder(method, payStatus, ref) {
-    const { data, error: err } = await supabase.from('orders').insert([{
+    const { data, error } = await supabase.from('orders').insert([{
       items: items.map((i) => ({ id: i.id, name: i.name, brand: i.brand, price: i.price, qty: i.qty, img: i.img })),
       total: totalPrice,
       customer_name: `${form.firstName} ${form.lastName}`,
       customer_email: form.email,
       shipping_address: `${form.address}, ${form.city}, ${form.state} ${form.zip}, ${form.country}`,
-      status: payStatus === 'completed' ? 'processing' : 'pending',
+      status: 'pending',
       payment_method: method,
       payment_status: payStatus,
       payment_ref: ref || '',
-    }]).select('id').single()
-    if (err) throw err
-    return data.id
+    }]).select()
+    if (error) throw error
+    return data?.[0]?.id
   }
 
-  useEffect(() => {
-    if (paymentMethod === 'stripe' && STRIPE_KEY && !stripeReady) {
-      const s = document.createElement('script')
-      s.src = 'https://js.stripe.com/v3/'
-      s.onload = () => {
-        const stripe = window.Stripe(STRIPE_KEY)
-        const elements = stripe.elements()
-        const card = elements.create('card', {
-          style: {
-            base: {
-              fontSize: '16px',
-              fontFamily: 'Inter, Helvetica Neue, sans-serif',
-              color: '#191c1f',
-              '::placeholder': { color: '#adadad' },
-            },
-            invalid: { color: '#dc2626' },
-          },
-        })
-        card.mount('#stripe-card-element')
-        stripeObjRef.current = { stripe, card }
-        setStripeReady(true)
-      }
-      document.head.appendChild(s)
-    }
-  }, [paymentMethod, stripeReady])
-
-  useEffect(() => {
-    if (paymentMethod === 'paypal' && PAYPAL_CLIENT_ID && !paypalReady) {
-      const s = document.createElement('script')
-      s.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CLIENT_ID}&currency=USD`
-      s.onload = () => {
-        window.paypal.Buttons({
-          createOrder(data, actions) {
-            return actions.order.create({
-              purchase_units: [{
-                amount: { value: totalPrice.toString() },
-                description: `FASHIONPHILE order — ${formRef.current.firstName} ${formRef.current.lastName}`,
-              }],
-            })
-          },
-          async onApprove(data, actions) {
-            const details = await actions.order.capture()
-            const id = await saveOrder('paypal', 'completed', details.id)
-            await createCustomerAccount(id)
-            setOrderNum(id)
-            clearCart()
-            setSubmitted(true)
-          },
-          onCancel() {
-            setError('PayPal payment was cancelled.')
-            setSaving(false)
-          },
-          onError(err) {
-            setError(err.message || 'PayPal payment failed.')
-            setSaving(false)
-          },
-        }).render('#paypal-button-container')
-        setPaypalReady(true)
-      }
-      s.onerror = () => { setError('Failed to load PayPal SDK.') }
-      document.head.appendChild(s)
-    }
-  }, [paymentMethod, paypalReady, totalPrice, clearCart])
-
-  useEffect(() => {
-    return () => {
-      if (stripeObjRef.current?.card) {
-        stripeObjRef.current.card.destroy()
-        stripeObjRef.current = null
-      }
-      setStripeReady(false)
-      setPaypalReady(false)
-    }
-  }, [])
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    if (!paymentMethod) { setError('Please select a payment method.'); return }
-    setSaving(true)
+  async function handlePaymentMethodSelect(value) {
+    if (processingRef.current) return
+    setPaymentMethod(value)
     setError('')
 
-    try {
-      if (paymentMethod === 'paypal') {
-        if (IS_DEMO) {
-          await new Promise((r) => setTimeout(r, 1000))
-          const ref = 'PAYPAL-DEMO-' + Date.now()
-          const id = await saveOrder('paypal', 'completed', ref)
-          await createCustomerAccount(id)
-          setOrderNum(id)
-          clearCart()
-          setSubmitted(true)
-        }
-      } else if (paymentMethod === 'flutterwave') {
-        await payWithFlutterwave()
-      } else if (paymentMethod === 'stripe') {
-        await payWithStripe()
-      } else if (paymentMethod === 'manual') {
-        const ref = 'BANK-' + Date.now().toString(36).toUpperCase()
-        const id = await saveOrder('bank_transfer', 'pending', ref)
-        await createCustomerAccount(id)
-        setPaymentRef(ref)
-        setOrderNum(id)
-        clearCart()
-        setSubmitted(true)
-      }
-    } catch (err) {
-      setError(err.message || 'Payment failed. Please try again.')
-      setSaving(false)
-    }
-  }
-
-  function payWithFlutterwave() {
-    return new Promise((resolve, reject) => {
-      function open() {
-        window.FlutterwaveCheckout({
-          public_key: FLW_KEY || 'FLWPUBK-DEMO',
-          tx_ref: 'FP-' + Date.now(),
-          amount: totalPrice,
-          currency: 'USD',
-          payment_options: 'card, banktransfer, ussd, mobilemoney, account',
-          customer: {
-            email: form.email,
-            name: `${form.firstName} ${form.lastName}`,
-            phone_number: form.phone || '0000000000',
-          },
-          callback: async (resp) => {
-            if (resp.status === 'successful' || resp.status === 'completed') {
-              const id = await saveOrder('flutterwave', 'completed', resp.transaction_id || '')
-              await createCustomerAccount(id)
-              setOrderNum(id)
-              clearCart()
-              setSubmitted(true)
-              resolve()
-            } else {
-              reject(new Error('Payment was not completed.'))
-            }
-          },
-          onclose: () => {
-            if (!submitted) reject(new Error('Payment cancelled'))
-          },
-        })
-      }
-      if (window.FlutterwaveCheckout) {
-        open()
-      } else {
-        const s = document.createElement('script')
-        s.src = 'https://checkout.flutterwave.com/v3.js'
-        s.onload = open
-        s.onerror = () => reject(new Error('Failed to load Flutterwave SDK'))
-        document.head.appendChild(s)
-      }
-    }).catch((err) => { throw err })
-  }
-
-  async function payWithStripe() {
-    if (IS_DEMO) {
-      await new Promise((r) => setTimeout(r, 1000))
-      const ref = 'STRIPE-DEMO-' + Date.now()
-      const id = await saveOrder('stripe', 'completed', ref)
-      await createCustomerAccount(id)
-      setOrderNum(id)
-      clearCart()
-      setSubmitted(true)
+    if (!form.firstName || !form.lastName || !form.email || !form.address) {
+      setError('Please fill in all required fields before selecting a payment method.')
       return
     }
 
-    if (!stripeObjRef.current) throw new Error('Stripe not loaded yet')
-    const { stripe, card } = stripeObjRef.current
+    processingRef.current = true
+    setSaving(true)
 
-    const { error: payErr, paymentIntent } = await stripe.confirmCardPayment(
-      '{PAYMENT_INTENT_CLIENT_SECRET}',
-      {
-        payment_method: {
-          card,
-          billing_details: {
-            name: `${form.firstName} ${form.lastName}`,
-            email: form.email,
-          },
-        },
-      },
-    )
+    try {
+      await new Promise((r) => setTimeout(r, 3000))
 
-    if (payErr) throw payErr
-    const id = await saveOrder('stripe', 'completed', paymentIntent?.id || '')
-    await createCustomerAccount(id)
-    setOrderNum(id)
-    clearCart()
-    setSubmitted(true)
+      const ref = value.toUpperCase() + '-DEMO-' + Date.now()
+      const orderId = await saveOrder(value, 'completed', ref)
+      await createCustomerAccount(orderId)
+      setOrderNum(orderId)
+      setSubmitted(true)
+      setShowContactModal(true)
+    } catch (err) {
+      setError(err.message || 'Payment failed. Please try again.')
+    } finally {
+      setSaving(false)
+      processingRef.current = false
+    }
+  }
+
+  function openTawkTo() {
+    if (window.Tawk_API) {
+      window.Tawk_API.visitor = {
+        name: form.firstName + ' ' + form.lastName,
+        email: form.email,
+      }
+      window.Tawk_API.maximize()
+    } else {
+      window.open('https://tawk.to/chat/6a2d37a3f0b5881c2ac3fa6a/1jr0a2m43', '_blank')
+    }
+  }
+
+  function closeModal() {
+    setShowContactModal(false)
   }
 
   if (items.length === 0 && !submitted) {
@@ -269,94 +116,98 @@ export default function Checkout() {
     return (
       <main className="checkout-page">
         <div className="checkout-success">
-          {paymentMethod === 'manual' ? (
-            <>
-              <div className="checkout-success__icon">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#92400e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="4" width="20" height="16" rx="2" /><line x1="12" y1="12" x2="12" y2="12.01" />
-                </svg>
-              </div>
-              <h1 className="checkout-success__title">Order Placed — Awaiting Payment</h1>
-              <p className="checkout-success__desc">
-                {orderNum ? `Order #${orderNum} — ` : ''}Please complete via bank transfer.
-              </p>
-              <div className="checkout-bank-details">
-                <h3>Bank Transfer Details</h3>
-                <div className="checkout-bank-details__row"><span>Bank:</span><span>Chase Bank</span></div>
-                <div className="checkout-bank-details__row"><span>Account Name:</span><span>FASHIONPHILE LLC</span></div>
-                <div className="checkout-bank-details__row"><span>Account Number:</span><span>**** **** **** 4832</span></div>
-                <div className="checkout-bank-details__row"><span>Routing Number:</span><span>021000021</span></div>
-                <div className="checkout-bank-details__row"><span>Amount Due:</span><span>${totalPrice.toLocaleString()} USD</span></div>
-                <div className="checkout-bank-details__row"><span>Reference:</span><span>{paymentRef}</span></div>
-              </div>
-              <p style={{ fontSize: '14px', color: '#7d7d7d', marginTop: '16px', maxWidth: '440px', marginInline: 'auto' }}>
-                Include reference <strong>{paymentRef}</strong> with your transfer. Orders process once payment clears.
-              </p>
-              <a href="/" className="btn btn--dark" style={{ marginTop: '16px' }}>Continue Shopping</a>
-            </>
-          ) : (
-            <>
-              <div className="checkout-success__icon">
-                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#205107" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
-                </svg>
-              </div>
-              <h1 className="checkout-success__title">Order Confirmed!</h1>
-              <p className="checkout-success__desc">
-                {orderNum ? `Order #${orderNum} — ` : ''}Thank you for your purchase. You&rsquo;ll receive a confirmation email shortly.
-              </p>
-              <a href="/" className="btn btn--dark">Continue Shopping</a>
-            </>
-          )}
+          <div className="checkout-pending__icon">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#bead0d" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
+          </div>
+
+          <h1 className="checkout-pending__title">Order Pending!</h1>
+          <p className="checkout-pending__desc">
+            {orderNum ? `Order #${orderNum} — ` : ''}Thank you for your Order. Complete payment to receive a confirmation email shortly.
+          </p>
+          <a href="/" className="btn btn--dark">Continue Shopping</a>
         </div>
+
+        {showContactModal && (
+          <div className="modal-overlay" onClick={closeModal}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h2 className="modal-title">Payment Assistance</h2>
+              <p className="modal-text">
+                Your order has been received but pending payment. If you&rsquo;re having any issues with your payment, please contact our admin for assistance.
+              </p>
+              <div className="modal-actions">
+                <button className="btn btn--dark" onClick={() => { openTawkTo(); closeModal() }}>
+                  Contact Admin
+                </button>
+                <button className="btn btn--outline-dark" onClick={closeModal}>
+                  Continue
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     )
   }
 
   return (
     <main className="checkout-page">
+      {saving && (
+        <div className="modal-overlay">
+          <div className="modal-content modal-content--loading">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-black)" strokeWidth="2" style={{ animation: 'spin 0.6s linear infinite' }}>
+              <circle cx="12" cy="12" r="10" opacity="0.25" />
+              <path d="M12 2a10 10 0 0 1 10 10" />
+            </svg>
+            <p style={{ marginTop: '16px', fontSize: '16px', fontWeight: 600 }}>Processing Payment&hellip;</p>
+            <p style={{ marginTop: '8px', fontSize: '14px', color: '#7d7d7d' }}>Please do not close this page.</p>
+          </div>
+        </div>
+      )}
+
       <div className="checkout-page__inner">
         <h1 className="checkout-page__title">Checkout</h1>
 
         <div className="checkout-page__layout">
-          <form className="checkout-form" onSubmit={handleSubmit}>
+          <div className="checkout-form">
             <h2 className="checkout-form__title">Contact</h2>
             <div className="checkout-form__group">
               <label>Email</label>
-              <input type="email" name="email" required value={form.email} onChange={handleChange} placeholder="you@example.com" />
+              <input type="email" name="email" required value={form.email} onChange={handleChange} placeholder="you@example.com" disabled={saving} />
             </div>
             <div className="checkout-form__group">
               <label>Phone (optional)</label>
-              <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+1 (555) 123-4567" />
+              <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="+1 (555) 123-4567" disabled={saving} />
             </div>
 
             <h2 className="checkout-form__title" style={{ marginTop: '24px' }}>Shipping</h2>
             <div className="checkout-form__row">
               <div className="checkout-form__group">
                 <label>First Name</label>
-                <input type="text" name="firstName" required value={form.firstName} onChange={handleChange} />
+                <input type="text" name="firstName" required value={form.firstName} onChange={handleChange} disabled={saving} />
               </div>
               <div className="checkout-form__group">
                 <label>Last Name</label>
-                <input type="text" name="lastName" required value={form.lastName} onChange={handleChange} />
+                <input type="text" name="lastName" required value={form.lastName} onChange={handleChange} disabled={saving} />
               </div>
             </div>
             <div className="checkout-form__group">
               <label>Address</label>
-              <input type="text" name="address" required value={form.address} onChange={handleChange} placeholder="123 Main St" />
+              <input type="text" name="address" required value={form.address} onChange={handleChange} placeholder="123 Main St" disabled={saving} />
             </div>
             <div className="checkout-form__row">
               <div className="checkout-form__group">
                 <label>City</label>
-                <input type="text" name="city" required value={form.city} onChange={handleChange} />
+                <input type="text" name="city" required value={form.city} onChange={handleChange} disabled={saving} />
               </div>
               <div className="checkout-form__group">
                 <label>State</label>
-                <input type="text" name="state" required value={form.state} onChange={handleChange} />
+                <input type="text" name="state" required value={form.state} onChange={handleChange} disabled={saving} />
               </div>
               <div className="checkout-form__group">
                 <label>ZIP</label>
-                <input type="text" name="zip" required value={form.zip} onChange={handleChange} />
+                <input type="text" name="zip" required value={form.zip} onChange={handleChange} disabled={saving} />
               </div>
             </div>
 
@@ -369,7 +220,8 @@ export default function Checkout() {
                     name="paymentMethod"
                     value={pm.value}
                     checked={paymentMethod === pm.value}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    onChange={() => handlePaymentMethodSelect(pm.value)}
+                    disabled={saving}
                   />
                   <span className="payment-method__icon">{pm.icon}</span>
                   <div className="payment-method__info">
@@ -383,58 +235,8 @@ export default function Checkout() {
               ))}
             </div>
 
-            {paymentMethod === 'stripe' && (
-              <div className="payment-stripe-wrapper">
-                {IS_DEMO ? (
-                  <p className="payment-demo-notice">
-                    Stripe is in demo mode. Click &quot;Place Order&quot; to simulate a successful payment. Add <code>VITE_STRIPE_PUBLIC_KEY</code> to your <code>.env</code> for live payments.
-                  </p>
-                ) : (
-                  <div id="stripe-card-element" className="payment-stripe-card" />
-                )}
-              </div>
-            )}
-
-            {paymentMethod === 'paypal' && (
-              <div className="payment-paypal-wrapper">
-                {IS_DEMO ? (
-                  <p className="payment-demo-notice">
-                    PayPal is in demo mode. Click &quot;Place Order&quot; to simulate a successful payment. Add <code>VITE_PAYPAL_CLIENT_ID</code> to your <code>.env</code> for live payments.
-                  </p>
-                ) : (
-                  <div id="paypal-button-container" className="payment-paypal-buttons" />
-                )}
-              </div>
-            )}
-
-            {paymentMethod === 'flutterwave' && (
-              <p className="payment-method-info">
-                You will be redirected to Flutterwave to complete your payment using a card, bank transfer, USSD, or mobile money.
-              </p>
-            )}
-
-            {paymentMethod === 'manual' && (
-              <div className="payment-manual-info">
-                <p>After placing your order, you&rsquo;ll receive bank transfer details to complete payment. Your order will be processed once the funds are received.</p>
-              </div>
-            )}
-
             {error && <p style={{ color: '#dc2626', fontSize: '14px', marginTop: '12px' }}>{error}</p>}
-
-            {!(paymentMethod === 'paypal' && PAYPAL_CLIENT_ID) && (
-              <button type="submit" className="btn btn--dark checkout-form__submit" disabled={saving}>
-                {saving ? (
-                  <span className="btn-loading">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: 'spin 0.6s linear infinite' }}>
-                      <circle cx="12" cy="12" r="10" opacity="0.25" />
-                      <path d="M12 2a10 10 0 0 1 10 10" />
-                    </svg>
-                    Processing Payment&hellip;
-                  </span>
-                ) : `Place Order — $${totalPrice.toLocaleString()}`}
-              </button>
-            )}
-          </form>
+          </div>
 
           <div className="checkout-sidebar">
             <h3 className="checkout-sidebar__title">{totalItems} item{totalItems !== 1 ? 's' : ''}</h3>

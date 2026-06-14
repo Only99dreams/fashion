@@ -18,7 +18,6 @@ const filterConfig = [
   { name: 'Category', key: 'category', options: ['Bags', 'Jewelry', 'Watches', 'Shoes', 'Accessories'] },
   { name: 'Condition', key: 'condition', options: ['Excellent', 'Very Good', 'Good', 'Shows Wear'] },
   { name: 'Price Range', key: 'priceRange', options: ['Under $500', '$500 - $1,000', '$1,000 - $2,500', '$2,500 - $5,000', '$5,000 - $10,000', '$10,000+'] },
-  { name: 'Color', key: 'color', options: ['Black', 'Brown', 'Beige', 'Red', 'Blue', 'Green', 'Pink', 'Purple', 'White', 'Gold'] },
 ]
 
 function parsePriceRange(label) {

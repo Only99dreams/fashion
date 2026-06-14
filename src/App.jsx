@@ -21,6 +21,7 @@ import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import OrderHistory from './pages/OrderHistory'
+import MyAccount from './pages/MyAccount'
 import GenericPage from './pages/GenericPage'
 import { AdminProvider } from './context/AdminContext'
 import { ToastProvider } from './context/ToastContext'
@@ -146,7 +147,7 @@ export default function App() {
     'about': <GenericPage title="About FASHIONPHILE" desc="The world's premier destination for authenticated pre-owned luxury." />,
     'help': <GenericPage title="Help & FAQ" desc="Find answers to common questions about shipping, returns, authenticity, and more." />,
     'stores': <GenericPage title="Our Locations" desc="Visit us in person or select in-store pickup at checkout." />,
-    'account': <GenericPage title="My Account" desc="Manage your profile, orders, and preferences." />,
+    'account': <MyAccount />,
     'admin/login': <AdminLoginWrapper />,
     'admin/dashboard': <ProtectedAdmin><AdminDashboard /></ProtectedAdmin>,
     'admin/products': <ProtectedAdmin><AdminProducts /></ProtectedAdmin>,

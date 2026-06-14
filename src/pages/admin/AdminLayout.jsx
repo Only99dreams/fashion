@@ -1,8 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAdmin } from '../../context/AdminContext'
 
-const STORE_KEY = 'fp_admin_sidebar'
-
 function getPath() {
   return window.location.pathname.replace(/^\//, '').replace(/\/$/, '') || ''
 }
@@ -19,10 +17,7 @@ const navItems = [
 export default function AdminLayout({ children, isLoginPage = false }) {
   const { session, profile, logout } = useAdmin()
   const [currentPath, setCurrentPath] = useState(getPath)
-  const [sidebarOpen, setSidebarOpen] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(STORE_KEY)) ?? true }
-    catch { return true }
-  })
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const redirected = useRef(false)
 
   useEffect(() => {
@@ -64,11 +59,7 @@ export default function AdminLayout({ children, isLoginPage = false }) {
   }
 
   function toggleSidebar() {
-    setSidebarOpen((v) => {
-      const next = !v
-      localStorage.setItem(STORE_KEY, JSON.stringify(next))
-      return next
-    })
+    setSidebarOpen((v) => !v)
   }
 
   return (
@@ -78,6 +69,7 @@ export default function AdminLayout({ children, isLoginPage = false }) {
           <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
         </svg>
       </button>
+      <div className="admin-sidebar-backdrop" onClick={toggleSidebar} />
       <aside className={`admin-sidebar${sidebarOpen ? '' : ' admin-sidebar--hidden'}`}>
         <div className="admin-sidebar__header">
           <h2 className="admin-sidebar__logo">FP Admin</h2>

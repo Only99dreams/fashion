@@ -16,8 +16,6 @@ const filterConfig = [
   { name: 'Designer', key: 'brand', options: ['Chanel', 'Hermes', 'Louis Vuitton', 'Gucci', 'Prada', 'Saint Laurent', 'Bottega Veneta', 'Dior', 'Fendi', 'Celine'] },
   { name: 'Condition', key: 'condition', options: ['Excellent', 'Very Good', 'Good', 'Shows Wear'] },
   { name: 'Price Range', key: 'priceRange', options: ['Under $500', '$500 - $1,000', '$1,000 - $2,500', '$2,500 - $5,000', '$5,000 - $10,000', '$10,000+'] },
-  { name: 'Size', key: 'size', options: ['Mini', 'Small', 'Medium', 'Large', 'Extra Large'] },
-  { name: 'Color', key: 'color', options: ['Black', 'Brown', 'Beige', 'Red', 'Blue', 'Green', 'Pink', 'Purple', 'White', 'Gold'] },
 ]
 
 function parsePriceRange(label) {

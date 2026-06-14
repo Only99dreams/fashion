@@ -25,11 +25,11 @@ const priceCategories = [
   { name: 'Under $2,000', href: '#', desc: 'Luxury under $2,000' },
 ]
 
+const BAG_CATEGORIES = ['Bags', 'Backpacks', 'Belt Bags', 'Bucket Bags', 'Clutches & Evening Bags', 'Crossbody', 'Handbags', 'Hobo Bags', 'Shoulder Bags', 'Totes', 'Travel & Luggage', 'Wallets']
+
 const filterConfig = [
   { name: 'Condition', key: 'condition', options: ['Excellent', 'Very Good', 'Good', 'Shows Wear'] },
   { name: 'Price Range', key: 'priceRange', options: ['Under $500', '$500 - $1,000', '$1,000 - $2,500', '$2,500 - $5,000', '$5,000 - $10,000', '$10,000+'] },
-  { name: 'Size', key: 'size', options: ['Mini', 'Small', 'Medium', 'Large', 'Extra Large'] },
-  { name: 'Color', key: 'color', options: ['Black', 'Brown', 'Beige', 'Red', 'Blue', 'Green', 'Pink', 'Purple', 'White', 'Gold'] },
 ]
 
 function parsePriceRange(label) {
@@ -73,7 +73,7 @@ export default function AllBags() {
   }, [])
 
   const bagProducts = useMemo(
-    () => allProducts.filter((p) => p.category === 'Bags'),
+    () => allProducts.filter((p) => BAG_CATEGORIES.includes(p.category)),
     [allProducts]
   )
 

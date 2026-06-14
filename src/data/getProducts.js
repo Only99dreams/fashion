@@ -1,5 +1,4 @@
 import { supabase } from '../supabase/client'
-import staticProducts from './products'
 
 export async function getProducts() {
   try {
@@ -8,8 +7,7 @@ export async function getProducts() {
       return data.map(normalizeProduct)
     }
   } catch {}
-
-  return staticProducts
+  return []
 }
 
 export async function getProductById(id) {
@@ -17,8 +15,7 @@ export async function getProductById(id) {
     const { data, error } = await supabase.from('products').select('*').eq('id', id).single()
     if (!error && data) return normalizeProduct(data)
   } catch {}
-
-  return staticProducts.find((p) => p.id === id) || null
+  return null
 }
 
 function normalizeProduct(p) {
