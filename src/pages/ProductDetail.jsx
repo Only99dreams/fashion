@@ -38,6 +38,8 @@ export default function ProductDetail({ productId }) {
   const [allProducts, setAllProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
 
   useEffect(() => {
     getProducts().then((data) => {
@@ -55,6 +57,17 @@ export default function ProductDetail({ productId }) {
   }, [product])
 
   useEffect(() => { setSelectedImage(0) }, [productId])
+
+  useEffect(() => {
+    if (!lightboxOpen) return
+    function handleKey(e) {
+      if (e.key === 'Escape') setLightboxOpen(false)
+      if (e.key === 'ArrowLeft') setLightboxIndex(i => (i > 0 ? i - 1 : productImages.length - 1))
+      if (e.key === 'ArrowRight') setLightboxIndex(i => (i < productImages.length - 1 ? i + 1 : 0))
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [lightboxOpen, productImages.length])
 
   if (loading) {
     return (
@@ -91,7 +104,7 @@ export default function ProductDetail({ productId }) {
 
       <div className="pd-layout">
         <div className="pd-gallery">
-          <div className="pd-gallery__main">
+          <div className="pd-gallery__main" onClick={() => { setLightboxOpen(true); setLightboxIndex(selectedImage) }}>
             <img src={productImages[selectedImage]} alt={product.name} />
           </div>
           {productImages.length > 1 && (
@@ -108,6 +121,24 @@ export default function ProductDetail({ productId }) {
             </div>
           )}
         </div>
+
+        {lightboxOpen && (
+          <div className="pd-lightbox" onClick={() => setLightboxOpen(false)}>
+            <button className="pd-lightbox__close" onClick={() => setLightboxOpen(false)}>&times;</button>
+            <button
+              className="pd-lightbox__arrow pd-lightbox__arrow--left"
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(i => (i > 0 ? i - 1 : productImages.length - 1)) }}
+            >&#8249;</button>
+            <div className="pd-lightbox__image" onClick={(e) => e.stopPropagation()}>
+              <img src={productImages[lightboxIndex]} alt={product.name} />
+            </div>
+            <button
+              className="pd-lightbox__arrow pd-lightbox__arrow--right"
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(i => (i < productImages.length - 1 ? i + 1 : 0)) }}
+            >&#8250;</button>
+            <div className="pd-lightbox__counter">{lightboxIndex + 1} / {productImages.length}</div>
+          </div>
+        )}
 
         <div className="pd-info">
           <p className="pd-info__brand">{product.brand}</p>

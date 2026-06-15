@@ -52,20 +52,32 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT '
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pending';
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_ref TEXT DEFAULT '';
 
+CREATE TABLE IF NOT EXISTS public.settings (
+  id TEXT PRIMARY KEY DEFAULT 'default',
+  store_name TEXT DEFAULT 'FASHIONPHILE',
+  currency TEXT DEFAULT 'USD',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Anyone can read products" ON public.products;
 DROP POLICY IF EXISTS "Admins can read products" ON public.products;
 DROP POLICY IF EXISTS "Admins can insert products" ON public.products;
 DROP POLICY IF EXISTS "Admins can update products" ON public.products;
 DROP POLICY IF EXISTS "Admins can delete products" ON public.products;
+DROP POLICY IF EXISTS "Anyone can insert orders" ON public.orders;
 DROP POLICY IF EXISTS "Admins can read orders" ON public.orders;
 DROP POLICY IF EXISTS "Admins can update orders" ON public.orders;
 DROP POLICY IF EXISTS "Users can insert orders" ON public.orders;
 
-CREATE POLICY "Admins can read products" ON public.products
-  FOR SELECT USING (auth.role() = 'authenticated');
+-- Public can browse products (no auth required)
+CREATE POLICY "Anyone can read products" ON public.products
+  FOR SELECT USING (true);
+-- Only authenticated admins can modify products
 CREATE POLICY "Admins can insert products" ON public.products
   FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Admins can update products" ON public.products
@@ -73,13 +85,25 @@ CREATE POLICY "Admins can update products" ON public.products
 CREATE POLICY "Admins can delete products" ON public.products
   FOR DELETE USING (auth.role() = 'authenticated');
 
+DROP POLICY IF EXISTS "Admins can read settings" ON public.settings;
+DROP POLICY IF EXISTS "Admins can insert settings" ON public.settings;
+DROP POLICY IF EXISTS "Admins can update settings" ON public.settings;
+
+CREATE POLICY "Admins can read settings" ON public.settings
+  FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Admins can insert settings" ON public.settings
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Admins can update settings" ON public.settings
+  FOR UPDATE USING (auth.role() = 'authenticated');
+
+-- Anyone can place an order
+CREATE POLICY "Anyone can insert orders" ON public.orders
+  FOR INSERT WITH CHECK (true);
+-- Only authenticated admins can view/manage orders
 CREATE POLICY "Admins can read orders" ON public.orders
   FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Admins can update orders" ON public.orders
   FOR UPDATE USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Users can insert orders" ON public.orders
-  FOR INSERT WITH CHECK (true);
 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$

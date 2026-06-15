@@ -2049,6 +2049,127 @@ button { cursor: pointer; font-family: inherit; }
   object-fit: cover;
 }
 
+.pd-gallery__main {
+  cursor: zoom-in;
+}
+
+/* Lightbox */
+.pd-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pd-lightbox-fade-in 0.2s ease;
+}
+
+@keyframes pd-lightbox-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.pd-lightbox__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--color-white);
+  font-size: 40px;
+  cursor: pointer;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  line-height: 1;
+}
+
+.pd-lightbox__close:hover {
+  opacity: 0.7;
+}
+
+.pd-lightbox__arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: var(--color-white);
+  font-size: 48px;
+  cursor: pointer;
+  width: 56px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  transition: background 0.2s;
+  line-height: 1;
+}
+
+.pd-lightbox__arrow:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.pd-lightbox__arrow--left {
+  left: 12px;
+}
+
+.pd-lightbox__arrow--right {
+  right: 12px;
+}
+
+.pd-lightbox__image {
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pd-lightbox__image img {
+  max-width: 100%;
+  max-height: 85vh;
+  object-fit: contain;
+  user-select: none;
+}
+
+.pd-lightbox__counter {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+}
+
+@media (max-width: 576px) {
+  .pd-lightbox__arrow {
+    font-size: 32px;
+    width: 40px;
+    height: 60px;
+  }
+  .pd-lightbox__close {
+    font-size: 32px;
+    width: 40px;
+    height: 40px;
+    top: 8px;
+    right: 8px;
+  }
+  .pd-lightbox__image {
+    max-width: 95vw;
+    max-height: 75vh;
+  }
+  .pd-lightbox__image img {
+    max-height: 75vh;
+  }
+}
+
 .pd-info {
   flex: 1;
   min-width: 0;
