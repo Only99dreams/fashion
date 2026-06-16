@@ -1,9 +1,11 @@
+const pexel = (id, w = 480) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
+
 const items = [
-  { label: 'Shop Bags', href: '/all-bags', img: 'https://picsum.photos/seed/bags/400/400' },
-  { label: 'Shop Sale', href: '/sale', img: 'https://picsum.photos/seed/sale/400/400' },
-  { label: 'Shop Jewelry', href: '/jewelry', img: 'https://picsum.photos/seed/jewelry/400/400' },
-  { label: 'Shop Accessories', href: '/accessories', img: 'https://picsum.photos/seed/accessories/400/400' },
-  { label: 'Shop Shoes', href: '/shoes', img: 'https://picsum.photos/seed/shoesss/400/400' },
+  { label: 'Shop Bags', href: '/all-bags', img: pexel(16690455) },
+  { label: 'Shop Sale', href: '/sale', img: pexel(1058959) },
+  { label: 'Shop Jewelry', href: '/jewelry', img: pexel(19646999) },
+  { label: 'Shop Accessories', href: '/accessories', img: pexel(6044266) },
+  { label: 'Shop Shoes', href: '/shoes', img: pexel(3916017) },
 ]
 
 export default function BestValueFinds() {

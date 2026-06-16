@@ -1,24 +1,26 @@
+const pexel = (id, w = 480) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
+
 const collections = [
   {
     title: 'Over 50% Off Retail',
     desc: 'Score and up your game.',
     cta: 'Shop Luxe Deals',
     href: '/sale',
-    img: 'https://picsum.photos/seed/retail/600/800',
+    img: pexel(16690455),
   },
   {
     title: "Editor's Picks",
     desc: 'Breakout stars and fan favorites.',
     cta: 'Shop Most Popular',
     href: '/all-bags',
-    img: 'https://picsum.photos/seed/editors/600/800',
+    img: pexel(27174565),
   },
   {
     title: 'Light and Airy',
     desc: 'The forecast is raffia.',
     cta: 'Shop Raffia',
     href: '/all-bags',
-    img: 'https://picsum.photos/seed/airy/600/800',
+    img: pexel(6044266),
   },
 ]
 

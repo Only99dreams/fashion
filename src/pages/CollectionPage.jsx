@@ -4,12 +4,14 @@ import { getProducts } from '../data/getProducts'
 
 const PAGE_SIZE = 12
 
+const pexel = (id, w = 1920) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
+
 const heroImages = {
-  Bags: 'https://images.unsplash.com/photo-1491637639811-1e2756d1cd62?w=1920&q=85',
-  Shoes: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=1920&q=85',
-  Accessories: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=1920&q=85',
-  Jewelry: 'https://images.unsplash.com/photo-1515562141589-6773d0b1c5c0?w=1920&q=85',
-  Watches: 'https://images.unsplash.com/photo-1524592094714-0f0654e20314?w=1920&q=85',
+  Bags: pexel(16690455),
+  Shoes: pexel(3916017),
+  Accessories: pexel(6044266),
+  Jewelry: pexel(19646999),
+  Watches: pexel(380782),
 }
 
 const filterConfig = [
@@ -96,7 +98,7 @@ export default function CollectionPage({ category }) {
     <main className="new-arrivals">
       <section className="ab-hero">
         <div className="ab-hero__bg">
-          <img src={heroImages[category] || 'https://images.unsplash.com/photo-1604176354204-9268737828e4?w=1920&q=85'} alt="" />
+          <img src={heroImages[category] || pexel(6044266)} alt="" />
         </div>
         <div className="ab-hero__content">
           <h1 className="ab-hero__title">{category}</h1>

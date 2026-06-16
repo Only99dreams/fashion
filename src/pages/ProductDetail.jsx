@@ -4,31 +4,33 @@ import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
 import { getProducts } from '../data/getProducts'
 
+const pexel = (id, w = 800) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
+
 const fallbackImages = {
   Bags: [
-    'https://picsum.photos/seed/pdbag1/800/800',
-    'https://picsum.photos/seed/pdbag2/800/800',
-    'https://picsum.photos/seed/pdbag3/800/800',
+    pexel(16690455),
+    pexel(1058959),
+    pexel(27174565),
   ],
   Shoes: [
-    'https://picsum.photos/seed/pdshoe1/800/800',
-    'https://picsum.photos/seed/pdshoe2/800/800',
-    'https://picsum.photos/seed/pdshoe3/800/800',
+    pexel(3916017),
+    pexel(16690455),
+    pexel(1058959),
   ],
   Jewelry: [
-    'https://picsum.photos/seed/pdjewel1/800/800',
-    'https://picsum.photos/seed/pdjewel2/800/800',
-    'https://picsum.photos/seed/pdjewel3/800/800',
+    pexel(19646999),
+    pexel(12194325),
+    pexel(3641059),
   ],
   Watches: [
-    'https://picsum.photos/seed/pdwatch1/800/800',
-    'https://picsum.photos/seed/pdwatch2/800/800',
-    'https://picsum.photos/seed/pdwatch3/800/800',
+    pexel(380782),
+    pexel(16690455),
+    pexel(1058959),
   ],
   Accessories: [
-    'https://picsum.photos/seed/pdacc1/800/800',
-    'https://picsum.photos/seed/pdacc2/800/800',
-    'https://picsum.photos/seed/pdacc3/800/800',
+    pexel(6044266),
+    pexel(16690455),
+    pexel(1058959),
   ],
 }
 
@@ -105,7 +107,7 @@ export default function ProductDetail({ productId }) {
       <div className="pd-layout">
         <div className="pd-gallery">
           <div className="pd-gallery__main" onClick={() => { setLightboxOpen(true); setLightboxIndex(selectedImage) }}>
-            <img src={productImages[selectedImage]} alt={product.name} />
+            <img src={productImages[selectedImage]} alt={product.name} loading="eager" />
           </div>
           {productImages.length > 1 && (
             <div className="pd-gallery__thumbs">
@@ -137,6 +139,10 @@ export default function ProductDetail({ productId }) {
               onClick={(e) => { e.stopPropagation(); setLightboxIndex(i => (i < productImages.length - 1 ? i + 1 : 0)) }}
             >&#8250;</button>
             <div className="pd-lightbox__counter">{lightboxIndex + 1} / {productImages.length}</div>
+            <div className="pd-lightbox__preload">
+              <img src={productImages[(lightboxIndex + 1) % productImages.length]} alt="" />
+              <img src={productImages[(lightboxIndex - 1 + productImages.length) % productImages.length]} alt="" />
+            </div>
           </div>
         )}
 

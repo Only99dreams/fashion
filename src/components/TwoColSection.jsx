@@ -1,9 +1,11 @@
+const pexel = (id, w = 1200) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
+
 export default function TwoColSection() {
   return (
     <section className="two-col-section">
       <a href="/all-bags" className="two-col__item">
         <img
-          src="https://picsum.photos/seed/wayshop/900/600"
+          src={pexel(16690455)}
           alt="Shop"
         />
         <div className="two-col__overlay">
@@ -15,7 +17,7 @@ export default function TwoColSection() {
       </a>
       <a href="/sell" className="two-col__item">
         <img
-          src="https://picsum.photos/seed/waysell/900/600"
+          src={pexel(1058959)}
           alt="Sell"
         />
         <div className="two-col__overlay">

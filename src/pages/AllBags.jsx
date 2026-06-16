@@ -4,18 +4,20 @@ import { getProducts } from '../data/getProducts'
 
 const PAGE_SIZE = 12
 
+const pexel = (id, w = 600) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
+
 const categories = [
-  { name: 'Crossbody', img: 'https://images.unsplash.com/photo-1604176354204-9268737828e4?w=600&q=80' },
-  { name: 'Totes', img: 'https://images.unsplash.com/photo-1564372427378-58eaf2d91d7b?w=600&q=80' },
-  { name: 'Shoulder Bags', img: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&q=80' },
-  { name: 'Backpacks', img: 'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=600&q=80' },
-  { name: 'Belt Bags', img: 'https://images.unsplash.com/photo-1598532163257-ae3c6b2524b6?w=600&q=80' },
-  { name: 'Bags on Sale', href: '/sale', img: 'https://images.unsplash.com/photo-1594226801341-41427b4e5c20?w=600&q=80' },
-  { name: 'Hobo Bags', img: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=600&q=80' },
-  { name: 'Bucket Bags', img: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&q=80' },
-  { name: 'Clutches & Evening Bags', img: 'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=600&q=80' },
-  { name: 'Wallet Style', img: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=600&q=80' },
-  { name: 'Travel & Luggage', img: 'https://images.unsplash.com/photo-1604176354204-9268737828e4?w=600&q=80' },
+  { name: 'Crossbody', img: pexel(6044266) },
+  { name: 'Totes', img: pexel(1058959) },
+  { name: 'Shoulder Bags', img: pexel(6044266) },
+  { name: 'Backpacks', img: pexel(27174565) },
+  { name: 'Belt Bags', img: pexel(16690455) },
+  { name: 'Bags on Sale', href: '/sale', img: pexel(16690455) },
+  { name: 'Hobo Bags', img: pexel(16690455) },
+  { name: 'Bucket Bags', img: pexel(16690455) },
+  { name: 'Clutches & Evening Bags', img: pexel(27174565) },
+  { name: 'Wallet Style', img: pexel(6044266) },
+  { name: 'Travel & Luggage', img: pexel(6044266) },
 ]
 
 const priceCategories = [
@@ -135,7 +137,7 @@ export default function AllBags() {
     <main className="new-arrivals">
       <section className="ab-hero">
         <div className="ab-hero__bg">
-          <img src="https://picsum.photos/seed/allbags/1920/600" alt="" />
+          <img src="https://images.pexels.com/photos/16690455/pexels-photo-16690455.jpeg?auto=compress&cs=tinysrgb&w=1920" alt="" />
         </div>
         <div className="ab-hero__content">
           <h1 className="ab-hero__title">Bags</h1>

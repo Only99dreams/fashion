@@ -37,6 +37,8 @@ import AdminSettings from './pages/admin/AdminSettings'
 import { CartProvider } from './context/CartContext'
 import './App.css'
 
+const pexel = (id, w = 1500) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
+
 function NotFoundPage() {
   return (
     <main className="new-arrivals" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', textAlign: 'center', padding: '40px' }}>
@@ -67,7 +69,7 @@ function HomePage() {
         desc="Our most hotly anticipated haute tool just dropped. Designed by FASHIONPHILE Atelier, the Handbag Wipes are the newest addition to our Investment Protection Collection."
         cta="Learn More"
         href="/help"
-        img="https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=1500&q=80"
+        img={pexel(16690455)}
         reverse
         desktopBg="#eeeeee"
       />
@@ -76,7 +78,7 @@ function HomePage() {
         desc="Spoil him back."
         cta="Shop Gift Ideas"
         href="/all-bags"
-        img="https://picsum.photos/seed/fatherday/1500/800"
+        img={pexel(380782)}
         desktopBg="#ece4d9"
         compact
       />
@@ -86,7 +88,7 @@ function HomePage() {
         desc="Game day is in the bag. With the FIFA World Cup 2026 coming to the U.S., your style doesn't have to stop at the gate. These stadium-approved bags meet official entry requirements (and your haute goals)."
         cta="Shop Now"
         href="/new-arrivals"
-        img="https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=1500&q=80"
+        img={pexel(1058959)}
         desktopBg="#ece4d9"
       />
       <InvestmentProducts />

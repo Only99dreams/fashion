@@ -32,19 +32,18 @@ function compressFile(file) {
     reader.onload = (ev) => {
       const img = new Image()
       img.onload = () => {
+        const size = 800
         const canvas = document.createElement('canvas')
-        const maxDim = 1200
-        let w = img.width, h = img.height
-        if (w > maxDim || h > maxDim) {
-          const ratio = Math.min(maxDim / w, maxDim / h)
-          w = Math.round(w * ratio)
-          h = Math.round(h * ratio)
-        }
-        canvas.width = w
-        canvas.height = h
+        canvas.width = size
+        canvas.height = size
         const ctx = canvas.getContext('2d')
-        ctx.drawImage(img, 0, 0, w, h)
-        resolve(canvas.toDataURL('image/jpeg', 0.8))
+        ctx.fillStyle = '#fff'
+        ctx.fillRect(0, 0, size, size)
+        const s = Math.min(size / img.width, size / img.height)
+        const dx = (size - img.width * s) / 2
+        const dy = (size - img.height * s) / 2
+        ctx.drawImage(img, dx, dy, img.width * s, img.height * s)
+        resolve(canvas.toDataURL('image/jpeg', 0.7))
       }
       img.onerror = () => reject(new Error('Failed to process image'))
       img.src = ev.target.result

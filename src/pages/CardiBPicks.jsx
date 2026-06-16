@@ -4,13 +4,15 @@ import { getProducts } from '../data/getProducts'
 
 const PAGE_SIZE = 12
 
+const pexel = (id, w = 400) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
+
 const cardiBrands = [
-  { name: 'Hermes', img: 'https://images.unsplash.com/photo-1598532163257-ae3c6b2524b6?w=400&q=80' },
-  { name: 'Chanel', img: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&q=80' },
-  { name: 'Bottega Veneta', img: 'https://images.unsplash.com/photo-1594226801341-41427b4e5c20?w=400&q=80' },
-  { name: 'Gucci', img: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=400&q=80' },
-  { name: 'Louis Vuitton', img: 'https://images.unsplash.com/photo-1564372427378-58eaf2d91d7b?w=400&q=80' },
-  { name: 'Cartier', img: 'https://images.unsplash.com/photo-1604176354204-9268737828e4?w=400&q=80' },
+  { name: 'Hermes', img: pexel(16690455) },
+  { name: 'Chanel', img: pexel(16690455) },
+  { name: 'Bottega Veneta', img: pexel(27174565) },
+  { name: 'Gucci', img: pexel(6044266) },
+  { name: 'Louis Vuitton', img: pexel(1058959) },
+  { name: 'Cartier', img: pexel(12194325) },
 ]
 
 const filterConfig = [
@@ -98,7 +100,7 @@ export default function CardiBPicks() {
     <main className="new-arrivals">
       <section className="cb-hero">
         <div className="cb-hero__bg">
-          <img src="https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=1920&q=85" alt="" />
+          <img src={pexel(16690455, 1920)} alt="" />
         </div>
         <div className="cb-hero__overlay" />
         <div className="cb-hero__content">
