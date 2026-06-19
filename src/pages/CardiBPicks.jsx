@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import ProductCard from '../components/ProductCard'
-import { getProducts } from '../data/getProducts'
+import { useProducts } from '../context/ProductContext'
 
 const PAGE_SIZE = 12
 
@@ -33,18 +33,10 @@ function parsePriceRange(label) {
 }
 
 export default function CardiBPicks() {
-  const [allProducts, setAllProducts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { products: allProducts, loading } = useProducts()
   const [selectedFilters, setSelectedFilters] = useState({})
   const [sort, setSort] = useState('Featured')
   const [page, setPage] = useState(1)
-
-  useEffect(() => {
-    getProducts().then((data) => {
-      setAllProducts(data)
-      setLoading(false)
-    })
-  }, [])
 
   const cardiProducts = useMemo(
     () => allProducts.filter((p) => p.is_cardi_pick),
@@ -158,7 +150,6 @@ export default function CardiBPicks() {
 
         <div className="na-main">
           <div className="na-toolbar">
-            <p className="na-toolbar__count">{filtered.length} Product{filtered.length !== 1 ? 's' : ''}</p>
             <div className="na-toolbar__sort">
               <label htmlFor="sort">Sort by:</label>
               <select id="sort" className="na-toolbar__select" value={sort} onChange={(e) => { setSort(e.target.value); setPage(1) }}>
@@ -171,8 +162,9 @@ export default function CardiBPicks() {
           </div>
 
           {loading ? (
-            <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>
-              <p style={{ fontSize: '18px', color: '#7d7d7d' }}>Loading...</p>
+            <div className="preloader">
+              <div className="preloader__spinner" />
+              <p className="preloader__text">Loading products...</p>
             </div>
           ) : paginated.length === 0 ? (
             <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>

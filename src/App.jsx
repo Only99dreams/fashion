@@ -35,6 +35,7 @@ import AdminCustomers from './pages/admin/AdminCustomers'
 import AdminAnalytics from './pages/admin/AdminAnalytics'
 import AdminSettings from './pages/admin/AdminSettings'
 import { CartProvider } from './context/CartContext'
+import { ProductProvider } from './context/ProductContext'
 import './App.css'
 
 const pexel = (id, w = 1500) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
@@ -163,6 +164,7 @@ export default function App() {
   return (
     <AdminProvider>
       <CartProvider>
+        <ProductProvider>
         <ToastProvider>
         {!isAdmin && <AnnouncementBar />}
         {!isAdmin && <Header />}
@@ -189,6 +191,7 @@ export default function App() {
         {!isAdmin && <Footer />}
         {!isAdmin && <CookieBanner />}
         </ToastProvider>
+        </ProductProvider>
       </CartProvider>
     </AdminProvider>
   )

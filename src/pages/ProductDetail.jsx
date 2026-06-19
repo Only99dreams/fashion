@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import ProductCard from '../components/ProductCard'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
-import { getProducts } from '../data/getProducts'
+import { useProducts } from '../context/ProductContext'
 
 const pexel = (id, w = 800) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
 
@@ -37,18 +37,10 @@ const fallbackImages = {
 export default function ProductDetail({ productId }) {
   const { addToCart } = useCart()
   const { showToast } = useToast()
-  const [allProducts, setAllProducts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { products: allProducts, loading } = useProducts()
   const [selectedImage, setSelectedImage] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
-
-  useEffect(() => {
-    getProducts().then((data) => {
-      setAllProducts(data)
-      setLoading(false)
-    })
-  }, [])
 
   const product = useMemo(() => allProducts.find((p) => p.id === productId), [allProducts, productId])
 
@@ -74,7 +66,10 @@ export default function ProductDetail({ productId }) {
   if (loading) {
     return (
       <main className="new-arrivals">
-        <div className="na-empty"><p>Loading...</p></div>
+        <div className="preloader">
+          <div className="preloader__spinner" />
+          <p className="preloader__text">Loading product...</p>
+        </div>
       </main>
     )
   }

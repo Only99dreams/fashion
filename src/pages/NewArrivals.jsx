@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import ProductCard from '../components/ProductCard'
-import { getProducts } from '../data/getProducts'
+import { useProducts } from '../context/ProductContext'
 
 const PAGE_SIZE = 12
 
@@ -28,18 +28,10 @@ function matchesPriceRange(price, range) {
 }
 
 export default function NewArrivals() {
-  const [allProducts, setAllProducts] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { products: allProducts, loading } = useProducts()
   const [selectedFilters, setSelectedFilters] = useState({})
   const [sort, setSort] = useState('Featured')
   const [page, setPage] = useState(1)
-
-  useEffect(() => {
-    getProducts().then((data) => {
-      setAllProducts(data)
-      setLoading(false)
-    })
-  }, [])
 
   function toggleFilter(groupKey, value) {
     setSelectedFilters((prev) => {
@@ -121,7 +113,6 @@ export default function NewArrivals() {
 
         <div className="na-main">
           <div className="na-toolbar">
-            <p className="na-toolbar__count">{filtered.length} Product{filtered.length !== 1 ? 's' : ''}</p>
             <div className="na-toolbar__sort">
               <label htmlFor="sort">Sort by:</label>
               <select id="sort" className="na-toolbar__select" value={sort} onChange={(e) => { setSort(e.target.value); setPage(1) }}>
@@ -134,8 +125,9 @@ export default function NewArrivals() {
           </div>
 
           {loading ? (
-            <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>
-              <p style={{ fontSize: '18px', color: '#7d7d7d' }}>Loading...</p>
+            <div className="preloader">
+              <div className="preloader__spinner" />
+              <p className="preloader__text">Loading products...</p>
             </div>
           ) : paginated.length === 0 ? (
             <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>
