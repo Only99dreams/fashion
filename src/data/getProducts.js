@@ -1,5 +1,3 @@
-import { supabase } from '../supabase/client'
-
 const COLUMNS = 'id,category,brand,name,condition,price,original_price,discount,est_retail,image_url,images,is_cardi_pick'
 
 function normalizeProduct(p) {
@@ -22,28 +20,52 @@ function normalizeProduct(p) {
   }
 }
 
-export async function getProducts() {
+const LIMIT = 100
+
+async function fetchProducts() {
   try {
-    const { data, error } = await supabase.from('products').select(COLUMNS).order('id', { ascending: true })
-    if (error) {
-      console.error('Supabase error:', error)
+    const u = import.meta.env.VITE_SUPABASE_URL
+    const k = import.meta.env.VITE_SUPABASE_ANON_KEY
+    const params = new URLSearchParams({ select: COLUMNS, order: 'id.asc', limit: LIMIT, apikey: k })
+    console.time('supabase-raw-fetch')
+    const res = await fetch(`${u}/rest/v1/products?${params}`)
+    console.timeEnd('supabase-raw-fetch')
+    console.log('Status:', res.status)
+    if (!res.ok) {
+      const text = await res.text()
+      console.error('Supabase error body:', text)
       return []
     }
-    if (!data || data.length === 0) {
-      console.warn('Supabase returned no data')
+    const data = await res.json()
+    console.log('Response type:', Array.isArray(data) ? 'array' : typeof data, 'length:', data?.length ?? 'N/A')
+    if (!Array.isArray(data)) {
+      console.error('Unexpected response:', JSON.stringify(data).slice(0, 500))
       return []
     }
     return data.map(normalizeProduct)
   } catch (err) {
-    console.error('getProducts caught:', err)
+    console.error('fetchProducts caught:', err)
     return []
   }
 }
 
+console.log('Started Supabase fetch at', new Date().toISOString())
+const promise = fetchProducts()
+
+export async function getProducts() {
+  return await promise
+}
+
 export async function getProductById(id) {
   try {
-    const { data, error } = await supabase.from('products').select(COLUMNS).eq('id', id).single()
-    if (!error && data) return normalizeProduct(data)
+    const u = import.meta.env.VITE_SUPABASE_URL
+    const k = import.meta.env.VITE_SUPABASE_ANON_KEY
+    const params = new URLSearchParams({ select: COLUMNS, id: `eq.${id}`, apikey: k })
+    const res = await fetch(`${u}/rest/v1/products?${params}`)
+    if (!res.ok) return null
+    const data = await res.json()
+    if (!data || data.length === 0) return null
+    return normalizeProduct(data[0])
   } catch {}
   return null
 }

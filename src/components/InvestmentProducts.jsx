@@ -22,7 +22,7 @@ export default function InvestmentProducts() {
         {products.map((p) => (
           <a key={p.id} href={'/product/' + p.id} className="product-card">
             <div className="product-card__image">
-              <img src={p.img} alt={p.name} />
+              <img src={p.img} alt={p.name} loading="lazy" />
               {p.off && <span className="product-card__badge">{p.off}</span>}
             </div>
             <div className="product-card__info">
