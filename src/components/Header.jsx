@@ -206,6 +206,7 @@ export default function Header() {
 
   const mobileNavLinks = [
     { label: 'New Arrivals', href: '/new-arrivals' },
+    { label: 'Designers', href: '/designers' },
     { label: 'Bags', href: '/all-bags' },
     { label: 'Shoes', href: '/shoes' },
     { label: 'Accessories', href: '/accessories' },

@@ -17,12 +17,15 @@ import DesignerCollection from './pages/DesignerCollection'
 import AllBags from './pages/AllBags'
 import CollectionPage from './pages/CollectionPage'
 import CardiBPicks from './pages/CardiBPicks'
+import DesignersPage from './pages/DesignersPage'
 import ProductDetail from './pages/ProductDetail'
 import Cart from './pages/Cart'
 import Checkout from './pages/Checkout'
 import OrderHistory from './pages/OrderHistory'
 import MyAccount from './pages/MyAccount'
 import GenericPage from './pages/GenericPage'
+import SupportModal from './components/SupportModal'
+import SupportButton from './components/SupportButton'
 import { AdminProvider } from './context/AdminContext'
 import { ToastProvider } from './context/ToastContext'
 import AdminLayout from './pages/admin/AdminLayout'
@@ -135,6 +138,7 @@ export default function App() {
 
   const routes = {
     '': <HomePage />,
+    'designers': <DesignersPage />,
     'new-arrivals': <NewArrivals />,
     'all-bags': <AllBags />,
     'shoes': <CollectionPage category="Shoes" />,
@@ -190,6 +194,8 @@ export default function App() {
         />
         {!isAdmin && <Footer />}
         {!isAdmin && <CookieBanner />}
+        {!isAdmin && <SupportButton />}
+        {!isAdmin && <SupportModal />}
         </ToastProvider>
         </ProductProvider>
       </CartProvider>
