@@ -5,6 +5,7 @@ import Hero from './components/Hero'
 import ShopCardiPicks from './components/ShopCardiPicks'
 import TwoColSection from './components/TwoColSection'
 import ProductGrid from './components/ProductGrid'
+import CartFloating from './components/CartFloating'
 import Footer from './components/Footer'
 import CookieBanner from './components/CookieBanner'
 import Router from './Router'
@@ -66,6 +67,9 @@ function HomePage() {
         title=""
         products={loading ? [] : products.slice(0, 8)}
       />
+      <div className="home-show-more">
+        <a href="/new-arrivals" className="btn btn--dark">Show More Products</a>
+      </div>
       <TwoColSection />
     </>
   )
@@ -165,6 +169,7 @@ export default function App() {
         {!isAdmin && <CookieBanner />}
         {!isAdmin && <SupportButton />}
         {!isAdmin && <SupportModal />}
+        {!isAdmin && <CartFloating />}
         </ToastProvider>
         </ProductProvider>
       </CartProvider>

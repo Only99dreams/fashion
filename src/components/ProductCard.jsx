@@ -1,13 +1,16 @@
 import { useCart } from '../context/CartContext'
+import { useToast } from '../context/ToastContext'
 
 export default function ProductCard({ product }) {
   const { id, brand, name, condition, price, originalPrice, discount, estRetail, img } = product
   const { addToCart } = useCart()
+  const { showToast } = useToast()
 
   function handleAddToCart(e) {
     e.preventDefault()
     e.stopPropagation()
     addToCart({ id, brand, name, img, price, condition })
+    showToast(`${brand} ${name} added to cart`)
   }
 
   return (
