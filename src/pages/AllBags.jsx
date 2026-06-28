@@ -175,9 +175,17 @@ export default function AllBags() {
           </div>
 
           {loading ? (
-            <div className="preloader">
-              <div className="preloader__spinner" />
-              <p className="preloader__text">Loading products...</p>
+            <div className="na-grid">
+              {Array.from({ length: 12 }, (_, i) => (
+                <div key={i} className="product-card product-card--skeleton">
+                  <div className="product-card__image" style={{ background: '#f0f0f0', borderRadius: '12px' }} />
+                  <div className="product-card__info">
+                    <div style={{ height: 14, width: '40%', background: '#f0f0f0', borderRadius: 4, marginBottom: 8 }} />
+                    <div style={{ height: 14, width: '80%', background: '#f0f0f0', borderRadius: 4, marginBottom: 8 }} />
+                    <div style={{ height: 14, width: '30%', background: '#f0f0f0', borderRadius: 4 }} />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : paginated.length === 0 ? (
             <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>

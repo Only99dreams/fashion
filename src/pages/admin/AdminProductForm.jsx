@@ -53,6 +53,25 @@ function compressFile(file) {
   })
 }
 
+async function uploadToStorage(base64) {
+  try {
+    const res = await fetch(base64)
+    const blob = await res.blob()
+    const name = `${crypto.randomUUID()}.jpg`
+    const { error } = await supabase.storage
+      .from('product-images')
+      .upload(name, blob, { contentType: 'image/jpeg', upsert: false })
+    if (error) throw error
+    const { data: { publicUrl } } = supabase.storage
+      .from('product-images')
+      .getPublicUrl(name)
+    return publicUrl
+  } catch (err) {
+    console.warn('Supabase Storage upload failed, falling back to base64:', err.message)
+    return base64
+  }
+}
+
 export default function AdminProductForm({ productId }) {
   const isEdit = Boolean(productId)
   const [form, setForm] = useState({
@@ -115,8 +134,9 @@ export default function AdminProductForm({ productId }) {
     if (valid.length === 0) return
     setUploading(true)
     const compressed = await Promise.all(valid.map(compressFile))
+    const stored = await Promise.all(compressed.map(uploadToStorage))
     setForm((prev) => {
-      const updated = [...prev.images, ...compressed]
+      const updated = [...prev.images, ...stored]
       return { ...prev, images: updated, image_url: updated[0] }
     })
     setUploading(false)
