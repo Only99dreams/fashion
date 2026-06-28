@@ -3,12 +3,8 @@ import AnnouncementBar from './components/AnnouncementBar'
 import Header from './components/Header'
 import Hero from './components/Hero'
 import ShopCardiPicks from './components/ShopCardiPicks'
-import BestValueFinds from './components/BestValueFinds'
-import ImageWithText from './components/ImageWithText'
-import FeaturedCollections from './components/FeaturedCollections'
-import BagsOnSale from './components/BagsOnSale'
-import InvestmentProducts from './components/InvestmentProducts'
 import TwoColSection from './components/TwoColSection'
+import ProductGrid from './components/ProductGrid'
 import Footer from './components/Footer'
 import CookieBanner from './components/CookieBanner'
 import Router from './Router'
@@ -38,10 +34,8 @@ import AdminCustomers from './pages/admin/AdminCustomers'
 import AdminAnalytics from './pages/admin/AdminAnalytics'
 import AdminSettings from './pages/admin/AdminSettings'
 import { CartProvider } from './context/CartContext'
-import { ProductProvider } from './context/ProductContext'
+import { ProductProvider, useProducts } from './context/ProductContext'
 import './App.css'
-
-const pexel = (id, w = 1500) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
 
 function NotFoundPage() {
   return (
@@ -62,41 +56,16 @@ function AdminLoginWrapper() {
 }
 
 function HomePage() {
+  const { products, loading } = useProducts()
+
   return (
     <>
       <Hero />
       <ShopCardiPicks />
-      <BestValueFinds />
-      <ImageWithText
-        caption="Introducing the"
-        title="Handbag Wipes"
-        desc="Our most hotly anticipated haute tool just dropped. Designed by FASHIONPHILE Atelier, the Handbag Wipes are the newest addition to our Investment Protection Collection."
-        cta="Learn More"
-        href="/help"
-        img={pexel(16690455)}
-        reverse
-        desktopBg="#eeeeee"
+      <ProductGrid
+        title=""
+        products={loading ? [] : products.slice(0, 8)}
       />
-      <ImageWithText
-        title="Father's Day Gifts"
-        desc="Spoil him back."
-        cta="Shop Gift Ideas"
-        href="/all-bags"
-        img={pexel(380782)}
-        desktopBg="#ece4d9"
-        compact
-      />
-      <FeaturedCollections />
-      <ImageWithText
-        title="Stadium Bags"
-        desc="Game day is in the bag. With the FIFA World Cup 2026 coming to the U.S., your style doesn't have to stop at the gate. These stadium-approved bags meet official entry requirements (and your haute goals)."
-        cta="Shop Now"
-        href="/new-arrivals"
-        img={pexel(1058959)}
-        desktopBg="#ece4d9"
-      />
-      <InvestmentProducts />
-      <BagsOnSale />
       <TwoColSection />
     </>
   )

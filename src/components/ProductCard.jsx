@@ -1,5 +1,14 @@
+import { useCart } from '../context/CartContext'
+
 export default function ProductCard({ product }) {
   const { id, brand, name, condition, price, originalPrice, discount, estRetail, img } = product
+  const { addToCart } = useCart()
+
+  function handleAddToCart(e) {
+    e.preventDefault()
+    e.stopPropagation()
+    addToCart({ id, brand, name, img, price, condition })
+  }
 
   return (
     <a href={'/product/' + id} className="product-card">
@@ -11,6 +20,9 @@ export default function ProductCard({ product }) {
           </svg>
         </button>
         {discount && <span className="product-card__badge">{discount}</span>}
+        <button className="product-card__add-cart" onClick={handleAddToCart}>
+          Add to Cart
+        </button>
       </div>
       <div className="product-card__info">
         <p className="product-card__vendor">{brand}</p>

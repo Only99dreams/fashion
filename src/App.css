@@ -894,6 +894,34 @@ button { cursor: pointer; font-family: inherit; }
   flex-wrap: wrap;
 }
 
+.product-card__add-cart {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  padding: 10px;
+  background: var(--color-black);
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.25s;
+  z-index: 2;
+}
+
+.product-card:hover .product-card__add-cart {
+  opacity: 1;
+}
+
+.product-card__add-cart:hover {
+  background: #333;
+}
+
 /* ===== TWO COL SECTION ===== */
 .two-col-section {
   display: grid;
