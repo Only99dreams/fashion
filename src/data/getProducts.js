@@ -50,7 +50,7 @@ async function fetchProducts() {
   try {
     const u = import.meta.env.VITE_SUPABASE_URL
     const k = import.meta.env.VITE_SUPABASE_ANON_KEY
-    const params = new URLSearchParams({ select: PRODUCT_COLUMNS, order: 'id.asc', limit: LIMIT, apikey: k })
+    const params = new URLSearchParams({ select: PRODUCT_COLUMNS, order: 'id.desc', limit: LIMIT, apikey: k })
     const res = await fetch(`${u}/rest/v1/products?${params}`)
     if (!res.ok) return []
     const data = await res.json()
@@ -79,7 +79,7 @@ async function fetchProductImages() {
   try {
     const u = import.meta.env.VITE_SUPABASE_URL
     const k = import.meta.env.VITE_SUPABASE_ANON_KEY
-    const params = new URLSearchParams({ select: IMAGE_COLUMNS, order: 'id.asc', limit: LIMIT, apikey: k })
+    const params = new URLSearchParams({ select: IMAGE_COLUMNS, order: 'id.desc', limit: LIMIT, apikey: k })
     const res = await fetch(`${u}/rest/v1/products?${params}`)
     if (!res.ok) return {}
     const data = await res.json()
