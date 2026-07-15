@@ -30,7 +30,7 @@ export default function Checkout() {
   async function createCustomerAccount(orderId) {
     const name = `${formRef.current.firstName} ${formRef.current.lastName}`
     const email = formRef.current.email
-    const { data: existing } = await supabase.from('customers').select('*').eq('email', email).single()
+    const { data: existing } = await supabase.from('customers').select('*').eq('email', email).maybeSingle()
     if (existing) {
       const orderIds = [...(existing.order_ids || []), orderId]
       await supabase.from('customers').update({ order_ids: orderIds, full_name: name, updated_at: new Date().toISOString() }).eq('email', email)

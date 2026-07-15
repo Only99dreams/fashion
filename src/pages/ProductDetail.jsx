@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import ProductCard from '../components/ProductCard'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
-import { useProducts } from '../context/ProductContext'
+import { getProductById, getRelatedProducts } from '../data/getProducts'
 
 const pexel = (id, w = 800) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
 
@@ -37,16 +37,36 @@ const fallbackImages = {
 export default function ProductDetail({ productId }) {
   const { addToCart } = useCart()
   const { showToast } = useToast()
-  const { products: allProducts, loading } = useProducts()
+  const [product, setProduct] = useState(null)
+  const [related, setRelated] = useState([])
+  const [loading, setLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
 
-  const product = useMemo(() => allProducts.find((p) => p.id === productId), [allProducts, productId])
+  // Fetch the full product (with all images) and its related items on demand.
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setSelectedImage(0)
+    setRelated([])
+    getProductById(productId).then((full) => {
+      if (cancelled) return
+      setProduct(full)
+      setLoading(false)
+      if (full) {
+        getRelatedProducts(full.category, full.id, 4).then((r) => {
+          if (!cancelled) setRelated(r)
+        })
+      }
+    })
+    return () => { cancelled = true }
+  }, [productId])
 
   const productImages = useMemo(() => {
     if (!product) return []
     if (product.images && product.images.length > 0) return product.images
+    if (product.img) return [product.img]
     return [product.img, ...(fallbackImages[product.category] || fallbackImages.Bags)]
   }, [product])
 
@@ -84,10 +104,6 @@ export default function ProductDetail({ productId }) {
       </main>
     )
   }
-
-  const related = allProducts
-    .filter((p) => p.category === product.category && p.id !== product.id)
-    .slice(0, 4)
 
   return (
     <main className="pd-page">

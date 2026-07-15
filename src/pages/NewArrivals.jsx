@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import ProductCard from '../components/ProductCard'
-import { useProducts } from '../context/ProductContext'
+import { useProductsPage } from '../hooks/useProductsPage'
 
 const PAGE_SIZE = 12
 
@@ -21,17 +21,22 @@ function parsePriceRange(label) {
   return null
 }
 
-function matchesPriceRange(price, range) {
-  if (!range) return true
-  const [min, max] = range
-  return price >= min && price < max
-}
-
 export default function NewArrivals() {
-  const { products: allProducts, loading } = useProducts()
   const [selectedFilters, setSelectedFilters] = useState({})
   const [sort, setSort] = useState('Featured')
   const [page, setPage] = useState(1)
+
+  const options = useMemo(() => ({
+    page,
+    pageSize: PAGE_SIZE,
+    sort,
+    categoryIn: selectedFilters.category,
+    brands: selectedFilters.brand,
+    conditions: selectedFilters.condition,
+    priceRanges: (selectedFilters.priceRange || []).map(parsePriceRange).filter(Boolean),
+  }), [page, sort, selectedFilters])
+
+  const { items, total, loading } = useProductsPage(options)
 
   function toggleFilter(groupKey, value) {
     setSelectedFilters((prev) => {
@@ -43,40 +48,8 @@ export default function NewArrivals() {
     })
   }
 
-  const filtered = useMemo(() => {
-    let result = [...allProducts]
-
-    Object.entries(selectedFilters).forEach(([key, values]) => {
-      if (!values || values.length === 0) return
-      if (key === 'priceRange') {
-        result = result.filter((p) =>
-          values.some((v) => {
-            const range = parsePriceRange(v)
-            return range && matchesPriceRange(p.price, range)
-          })
-        )
-      } else {
-        result = result.filter((p) => values.includes(p[key]))
-      }
-    })
-
-    switch (sort) {
-      case 'Price: Low to High':
-        result.sort((a, b) => a.price - b.price); break
-      case 'Price: High to Low':
-        result.sort((a, b) => b.price - a.price); break
-      case 'Newest':
-        result.sort((a, b) => b.id - a.id); break
-      default:
-        break
-    }
-
-    return result
-  }, [selectedFilters, sort, allProducts])
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const totalPages = Math.ceil(total / PAGE_SIZE)
   const currentPage = Math.min(page, totalPages || 1)
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   return (
     <main className="new-arrivals">
@@ -137,13 +110,13 @@ export default function NewArrivals() {
                 </div>
               ))}
             </div>
-          ) : paginated.length === 0 ? (
+          ) : items.length === 0 ? (
             <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>
               <p style={{ fontSize: '18px', color: '#7d7d7d' }}>No products match your filters. Try adjusting your selection.</p>
             </div>
           ) : (
             <div className="na-grid">
-              {paginated.map((p) => (
+              {items.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>

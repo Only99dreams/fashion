@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../supabase/client'
+import { clearProductCache } from '../../data/getProducts'
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([])
@@ -12,7 +13,10 @@ export default function AdminProducts() {
     setLoading(true)
     setError('')
     try {
-      const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false })
+      const { data } = await supabase
+        .from('products')
+        .select('id,brand,name,category,price,condition,image_url')
+        .order('created_at', { ascending: false })
       setProducts(data || [])
     } catch (err) {
       setError('Failed to load products')
@@ -26,6 +30,7 @@ export default function AdminProducts() {
     try {
       await supabase.from('products').delete().eq('id', id)
       setProducts((prev) => prev.filter((p) => p.id !== id))
+      clearProductCache()
     } catch (err) {
       setError('Failed to delete product')
     }

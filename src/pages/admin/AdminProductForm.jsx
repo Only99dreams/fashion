@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase, normalizeImages } from '../../supabase/client'
+import { clearProductCache } from '../../data/getProducts'
 
 const brands = [
   'Hermes', 'Chanel', 'Louis Vuitton', 'Gucci', 'Bottega Veneta', 'Prada',
@@ -54,22 +55,29 @@ function compressFile(file) {
 }
 
 async function uploadToStorage(base64) {
-  try {
-    const res = await fetch(base64)
-    const blob = await res.blob()
-    const name = `${crypto.randomUUID()}.jpg`
-    const { error } = await supabase.storage
-      .from('product-images')
-      .upload(name, blob, { contentType: 'image/jpeg', upsert: false })
-    if (error) throw error
-    const { data: { publicUrl } } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(name)
-    return publicUrl
-  } catch (err) {
-    console.warn('Supabase Storage upload failed, falling back to base64:', err.message)
-    return base64
+  // Never fall back to storing base64 in the database. Storing image data as
+  // text in the products table bloats the DB and egress and will eventually
+  // crash the project. If Storage upload fails, surface a clear error instead.
+  const res = await fetch(base64)
+  const blob = await res.blob()
+  const name = `${crypto.randomUUID()}.jpg`
+  const { error } = await supabase.storage
+    .from('product-images')
+    .upload(name, blob, {
+      contentType: 'image/jpeg',
+      upsert: false,
+      cacheControl: '31536000', // cache images for 1 year in browser/CDN
+    })
+  if (error) {
+    console.error('Supabase Storage upload failed:', error.message)
+    throw new Error(
+      'Image upload failed. Make sure the "product-images" Storage bucket exists and is public. (' + error.message + ')'
+    )
   }
+  const { data: { publicUrl } } = supabase.storage
+    .from('product-images')
+    .getPublicUrl(name)
+  return publicUrl
 }
 
 export default function AdminProductForm({ productId }) {
@@ -133,13 +141,18 @@ export default function AdminProductForm({ productId }) {
     }
     if (valid.length === 0) return
     setUploading(true)
-    const compressed = await Promise.all(valid.map(compressFile))
-    const stored = await Promise.all(compressed.map(uploadToStorage))
-    setForm((prev) => {
-      const updated = [...prev.images, ...stored]
-      return { ...prev, images: updated, image_url: updated[0] }
-    })
-    setUploading(false)
+    try {
+      const compressed = await Promise.all(valid.map(compressFile))
+      const stored = await Promise.all(compressed.map(uploadToStorage))
+      setForm((prev) => {
+        const updated = [...prev.images, ...stored]
+        return { ...prev, images: updated, image_url: updated[0] }
+      })
+    } catch (err) {
+      setError(err.message || 'Image upload failed. Please try again.')
+    } finally {
+      setUploading(false)
+    }
   }
 
   async function handleFileSelect(e) {
@@ -208,6 +221,7 @@ export default function AdminProductForm({ productId }) {
     if (err) {
       setError(err.message)
     } else {
+      clearProductCache()
       setDone(true)
     }
     setSaving(false)

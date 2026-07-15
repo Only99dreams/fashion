@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import ProductCard from '../components/ProductCard'
-import { useProducts } from '../context/ProductContext'
+import { useProductsPage } from '../hooks/useProductsPage'
+import { brandSlugify } from '../data/getProducts'
 
 const PAGE_SIZE = 12
 
@@ -20,10 +21,6 @@ function parsePriceRange(label) {
   return null
 }
 
-function normalize(name) {
-  return name.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '')
-}
-
 function toDisplayName(slug) {
   return slug
     .split('-')
@@ -33,18 +30,25 @@ function toDisplayName(slug) {
 }
 
 export default function DesignerCollection({ designerName }) {
-  const { products: allProducts, loading } = useProducts()
   const [selectedFilters, setSelectedFilters] = useState({})
   const [sort, setSort] = useState('Featured')
   const [page, setPage] = useState(1)
 
   const displayName = toDisplayName(designerName)
-  const normalizedName = normalize(displayName)
+  const brandSlug = brandSlugify(displayName)
 
-  const designerProducts = useMemo(
-    () => allProducts.filter((p) => normalize(p.brand) === normalizedName),
-    [allProducts, normalizedName]
-  )
+  const options = useMemo(() => ({
+    page,
+    pageSize: PAGE_SIZE,
+    sort,
+    brandSlug,
+    brandDisplay: displayName,
+    categoryIn: selectedFilters.category,
+    conditions: selectedFilters.condition,
+    priceRanges: (selectedFilters.priceRange || []).map(parsePriceRange).filter(Boolean),
+  }), [page, sort, selectedFilters, brandSlug, displayName])
+
+  const { items, total, loading } = useProductsPage(options)
 
   function toggleFilter(groupKey, value) {
     setSelectedFilters((prev) => {
@@ -56,40 +60,8 @@ export default function DesignerCollection({ designerName }) {
     })
   }
 
-  const filtered = useMemo(() => {
-    let result = [...designerProducts]
-
-    Object.entries(selectedFilters).forEach(([key, values]) => {
-      if (!values || values.length === 0) return
-      if (key === 'priceRange') {
-        result = result.filter((p) =>
-          values.some((v) => {
-            const range = parsePriceRange(v)
-            return range && p.price >= range[0] && p.price < range[1]
-          })
-        )
-      } else {
-        result = result.filter((p) => values.includes(p[key]))
-      }
-    })
-
-    switch (sort) {
-      case 'Price: Low to High':
-        result.sort((a, b) => a.price - b.price); break
-      case 'Price: High to Low':
-        result.sort((a, b) => b.price - a.price); break
-      case 'Newest':
-        result.sort((a, b) => b.id - a.id); break
-      default:
-        break
-    }
-
-    return result
-  }, [selectedFilters, sort, designerProducts])
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const totalPages = Math.ceil(total / PAGE_SIZE)
   const currentPage = Math.min(page, totalPages || 1)
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   return (
     <main className="new-arrivals">
@@ -150,13 +122,13 @@ export default function DesignerCollection({ designerName }) {
                 </div>
               ))}
             </div>
-          ) : paginated.length === 0 ? (
+          ) : items.length === 0 ? (
             <div className="na-empty">
               <p>No {displayName} products available right now. Check back soon!</p>
             </div>
           ) : (
             <div className="na-grid">
-              {paginated.map((p) => (
+              {items.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>

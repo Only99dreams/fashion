@@ -1,31 +1,8 @@
 import { useMemo, useState, useEffect } from 'react'
 import ProductCard from '../components/ProductCard'
-import { useProducts } from '../context/ProductContext'
+import { useProductsPage } from '../hooks/useProductsPage'
 
 const PAGE_SIZE = 12
-
-const pexel = (id, w = 600) => `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&w=${w}`
-
-const categories = [
-  { name: 'Crossbody', img: pexel(6044266) },
-  { name: 'Totes', img: pexel(1058959) },
-  { name: 'Shoulder Bags', img: pexel(6044266) },
-  { name: 'Backpacks', img: pexel(27174565) },
-  { name: 'Belt Bags', img: pexel(16690455) },
-  { name: 'Bags on Sale', href: '/sale', img: pexel(16690455) },
-  { name: 'Hobo Bags', img: pexel(16690455) },
-  { name: 'Bucket Bags', img: pexel(16690455) },
-  { name: 'Clutches & Evening Bags', img: pexel(27174565) },
-  { name: 'Wallet Style', img: pexel(6044266) },
-  { name: 'Travel & Luggage', img: pexel(6044266) },
-]
-
-const priceCategories = [
-  { name: 'Best Value', href: '#', desc: 'Best prices on the market' },
-  { name: 'Under $500', href: '#', desc: 'Luxury under $500' },
-  { name: 'Under $1,000', href: '#', desc: 'Luxury under $1,000' },
-  { name: 'Under $2,000', href: '#', desc: 'Luxury under $2,000' },
-]
 
 const BAG_CATEGORIES = ['Bags', 'Backpacks', 'Belt Bags', 'Bucket Bags', 'Clutches & Evening Bags', 'Crossbody', 'Handbags', 'Hobo Bags', 'Shoulder Bags', 'Totes', 'Travel & Luggage', 'Wallets']
 
@@ -45,7 +22,6 @@ function parsePriceRange(label) {
 }
 
 export default function AllBags() {
-  const { products: allProducts, loading } = useProducts()
   const [selectedFilters, setSelectedFilters] = useState({})
   const [sort, setSort] = useState('Featured')
   const [page, setPage] = useState(1)
@@ -56,6 +32,7 @@ export default function AllBags() {
       const params = new URLSearchParams(window.location.search)
       const q = params.get('q') || ''
       setSearchQuery(q)
+      setPage(1)
     }
     readSearchParam()
     window.addEventListener('popstate', readSearchParam)
@@ -66,10 +43,17 @@ export default function AllBags() {
     }
   }, [])
 
-  const bagProducts = useMemo(
-    () => allProducts.filter((p) => BAG_CATEGORIES.includes(p.category)),
-    [allProducts]
-  )
+  const options = useMemo(() => ({
+    page,
+    pageSize: PAGE_SIZE,
+    sort,
+    categoryIn: BAG_CATEGORIES,
+    conditions: selectedFilters.condition,
+    priceRanges: (selectedFilters.priceRange || []).map(parsePriceRange).filter(Boolean),
+    search: searchQuery || undefined,
+  }), [page, sort, selectedFilters, searchQuery])
+
+  const { items, total, loading } = useProductsPage(options)
 
   function toggleFilter(groupKey, value) {
     setSelectedFilters((prev) => {
@@ -81,49 +65,8 @@ export default function AllBags() {
     })
   }
 
-  const filtered = useMemo(() => {
-    let result = [...bagProducts]
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase()
-      result = result.filter((p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.brand.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q)
-      )
-    }
-
-    Object.entries(selectedFilters).forEach(([key, values]) => {
-      if (!values || values.length === 0) return
-      if (key === 'priceRange') {
-        result = result.filter((p) =>
-          values.some((v) => {
-            const range = parsePriceRange(v)
-            return range && p.price >= range[0] && p.price < range[1]
-          })
-        )
-      } else {
-        result = result.filter((p) => values.includes(p[key]))
-      }
-    })
-
-    switch (sort) {
-      case 'Price: Low to High':
-        result.sort((a, b) => a.price - b.price); break
-      case 'Price: High to Low':
-        result.sort((a, b) => b.price - a.price); break
-      case 'Newest':
-        result.sort((a, b) => b.id - a.id); break
-      default:
-        break
-    }
-
-    return result
-  }, [selectedFilters, sort, bagProducts, searchQuery])
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const totalPages = Math.ceil(total / PAGE_SIZE)
   const currentPage = Math.min(page, totalPages || 1)
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   return (
     <main className="new-arrivals">
@@ -187,13 +130,13 @@ export default function AllBags() {
                 </div>
               ))}
             </div>
-          ) : paginated.length === 0 ? (
+          ) : items.length === 0 ? (
             <div className="na-empty" style={{ textAlign: 'center', padding: '60px 20px' }}>
               <p style={{ fontSize: '18px', color: '#7d7d7d' }}>No products match your filters. Try adjusting your selection.</p>
             </div>
           ) : (
             <div className="na-grid">
-              {paginated.map((p) => (
+              {items.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>
@@ -210,7 +153,8 @@ export default function AllBags() {
                 Prev
               </a>
               {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const start = Math.max(1, currentPage - 2)
+                const rangeLen = Math.min(totalPages, 5)
+                const start = Math.max(1, Math.min(currentPage - 2, totalPages - rangeLen + 1))
                 const pNum = start + i
                 if (pNum > totalPages) return null
                 return pNum === currentPage ? (

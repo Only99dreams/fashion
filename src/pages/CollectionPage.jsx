@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import ProductCard from '../components/ProductCard'
-import { useProducts } from '../context/ProductContext'
+import { useProductsPage } from '../hooks/useProductsPage'
 
 const PAGE_SIZE = 12
 
@@ -31,15 +31,21 @@ function parsePriceRange(label) {
 }
 
 export default function CollectionPage({ category }) {
-  const { products: allProducts, loading } = useProducts()
   const [selectedFilters, setSelectedFilters] = useState({})
   const [sort, setSort] = useState('Featured')
   const [page, setPage] = useState(1)
 
-  const categoryProducts = useMemo(
-    () => allProducts.filter((p) => p.category === category),
-    [allProducts, category]
-  )
+  const options = useMemo(() => ({
+    page,
+    pageSize: PAGE_SIZE,
+    sort,
+    category,
+    brands: selectedFilters.brand,
+    conditions: selectedFilters.condition,
+    priceRanges: (selectedFilters.priceRange || []).map(parsePriceRange).filter(Boolean),
+  }), [page, sort, selectedFilters, category])
+
+  const { items, total, loading } = useProductsPage(options)
 
   function toggleFilter(groupKey, value) {
     setSelectedFilters((prev) => {
@@ -51,40 +57,8 @@ export default function CollectionPage({ category }) {
     })
   }
 
-  const filtered = useMemo(() => {
-    let result = [...categoryProducts]
-
-    Object.entries(selectedFilters).forEach(([key, values]) => {
-      if (!values || values.length === 0) return
-      if (key === 'priceRange') {
-        result = result.filter((p) =>
-          values.some((v) => {
-            const range = parsePriceRange(v)
-            return range && p.price >= range[0] && p.price < range[1]
-          })
-        )
-      } else {
-        result = result.filter((p) => values.includes(p[key]))
-      }
-    })
-
-    switch (sort) {
-      case 'Price: Low to High':
-        result.sort((a, b) => a.price - b.price); break
-      case 'Price: High to Low':
-        result.sort((a, b) => b.price - a.price); break
-      case 'Newest':
-        result.sort((a, b) => b.id - a.id); break
-      default:
-        break
-    }
-
-    return result
-  }, [selectedFilters, sort, categoryProducts])
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const totalPages = Math.ceil(total / PAGE_SIZE)
   const currentPage = Math.min(page, totalPages || 1)
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   return (
     <main className="new-arrivals">
@@ -148,13 +122,13 @@ export default function CollectionPage({ category }) {
                 </div>
               ))}
             </div>
-          ) : paginated.length === 0 ? (
+          ) : items.length === 0 ? (
             <div className="na-empty">
               <p>No {category} products available right now. Check back soon!</p>
             </div>
           ) : (
             <div className="na-grid">
-              {paginated.map((p) => (
+              {items.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>
@@ -171,7 +145,8 @@ export default function CollectionPage({ category }) {
                 Prev
               </a>
               {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const start = Math.max(1, currentPage - 2)
+                const rangeLen = Math.min(totalPages, 5)
+                const start = Math.max(1, Math.min(currentPage - 2, totalPages - rangeLen + 1))
                 const pNum = start + i
                 if (pNum > totalPages) return null
                 return pNum === currentPage ? (

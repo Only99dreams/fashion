@@ -7,25 +7,19 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY environment variables')
 }
 
-function supabaseFetch(url, options) {
-  let finalUrl = url
-  if (import.meta.env.DEV) {
-    finalUrl = finalUrl.replace(supabaseUrl, '/supabase-proxy')
-  }
-  const { headers, ...rest } = options || {}
-  const modified = { ...headers }
-  const key = modified['apikey']
-  if (key) {
-    delete modified['apikey']
-    const u = new URL(finalUrl, window.location.origin)
-    u.searchParams.set('apikey', key)
-    return fetch(u.toString(), { ...rest, headers: modified })
-  }
-  return fetch(finalUrl, options)
-}
+const proxyUrl = import.meta.env.DEV
+  ? supabaseUrl.replace(/^https?:\/\/[^/]+/, '')
+  : ''
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  global: { fetch: supabaseFetch }
+  global: {
+    fetch(url, options) {
+      if (proxyUrl && typeof url === 'string') {
+        url = url.replace(supabaseUrl, '/supabase-proxy')
+      }
+      return fetch(url, options)
+    },
+  },
 })
 
 export function normalizeImages(row) {

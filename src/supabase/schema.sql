@@ -52,6 +52,22 @@ ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT '
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT 'pending';
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS payment_ref TEXT DEFAULT '';
 
+-- Normalized brand slug for reliable designer filtering (matches the client-side
+-- brandSlugify: lowercase, "&" -> "and", strip all non-alphanumerics).
+-- Generated + STORED so it stays in sync automatically for every row.
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS brand_slug TEXT
+  GENERATED ALWAYS AS (
+    regexp_replace(replace(lower(brand), '&', 'and'), '[^a-z0-9]+', '', 'g')
+  ) STORED;
+
+-- Indexes to keep server-side filtering/pagination fast as the catalog grows.
+CREATE INDEX IF NOT EXISTS idx_products_brand_slug ON public.products (brand_slug);
+CREATE INDEX IF NOT EXISTS idx_products_category ON public.products (category);
+CREATE INDEX IF NOT EXISTS idx_products_price ON public.products (price);
+CREATE INDEX IF NOT EXISTS idx_products_id_desc ON public.products (id DESC);
+CREATE INDEX IF NOT EXISTS idx_products_cardi_pick ON public.products (is_cardi_pick) WHERE is_cardi_pick = TRUE;
+
 CREATE TABLE IF NOT EXISTS public.settings (
   id TEXT PRIMARY KEY DEFAULT 'default',
   store_name TEXT DEFAULT 'FASHIONPHILE',

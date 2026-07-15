@@ -35,7 +35,7 @@ import AdminCustomers from './pages/admin/AdminCustomers'
 import AdminAnalytics from './pages/admin/AdminAnalytics'
 import AdminSettings from './pages/admin/AdminSettings'
 import { CartProvider } from './context/CartContext'
-import { ProductProvider, useProducts } from './context/ProductContext'
+import { getFeaturedProducts } from './data/getProducts'
 import './App.css'
 
 function NotFoundPage() {
@@ -57,7 +57,18 @@ function AdminLoginWrapper() {
 }
 
 function HomePage() {
-  const { products, loading } = useProducts()
+  const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    getFeaturedProducts(8).then((items) => {
+      if (cancelled) return
+      setProducts(items)
+      setLoading(false)
+    })
+    return () => { cancelled = true }
+  }, [])
 
   return (
     <>
@@ -65,7 +76,7 @@ function HomePage() {
       <ShopCardiPicks />
       <ProductGrid
         title=""
-        products={loading ? [] : products.slice(0, 8)}
+        products={loading ? [] : products}
       />
       <div className="home-show-more">
         <a href="/new-arrivals" className="btn btn--dark">Show More Products</a>
@@ -141,7 +152,6 @@ export default function App() {
   return (
     <AdminProvider>
       <CartProvider>
-        <ProductProvider>
         <ToastProvider>
         {!isAdmin && <AnnouncementBar />}
         {!isAdmin && <Header />}
@@ -171,7 +181,6 @@ export default function App() {
         {!isAdmin && <SupportModal />}
         {!isAdmin && <CartFloating />}
         </ToastProvider>
-        </ProductProvider>
       </CartProvider>
     </AdminProvider>
   )
